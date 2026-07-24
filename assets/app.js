@@ -66,7 +66,13 @@ function loadLocalState() {
   } catch (error) {
     console.warn("No se pudieron cargar los datos locales.", error);
   }
-  return structuredClone(window.GODSPLAN_DATA);
+  const initialState = structuredClone(window.GODSPLAN_DATA);
+  const todayIds = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const todayId = todayIds[new Date().getDay()];
+  if (initialState.routines?.some((routine) => routine.id === todayId)) {
+    initialState.selectedRoutineId = todayId;
+  }
+  return initialState;
 }
 
 function persistLocalState() {
@@ -577,6 +583,7 @@ async function deleteRoutine() {
 
 function renderWorkout() {
   renderWorkoutDays();
+  renderQuickStartWorkout();
   if (workoutSession.started) {
     $("#workoutPicker").hidden = true;
     $("#workoutSession").hidden = false;
@@ -586,6 +593,20 @@ function renderWorkout() {
 
   $("#workoutPicker").hidden = false;
   $("#workoutSession").hidden = true;
+}
+
+function renderQuickStartWorkout() {
+  const routine = getWorkoutRoutine();
+  const targetLabel = routine?.exercises?.length ? `${routine.exercises.length} ejercicios` : "Descanso activo";
+  $("#quickStartWorkout").innerHTML = `
+    <article class="quick-start-card" style="border-color:${escapeHtml(routine?.color || "#e0b15b")}">
+      <span class="eyebrow">Entreno seleccionado</span>
+      <h2>${escapeHtml(routine?.day || "")} - ${escapeHtml(routine?.name || "Rutina")}</h2>
+      <p>${escapeHtml(targetLabel)}${routine?.cardio ? ` - ${escapeHtml(routine.cardio)}` : ""}</p>
+      <button class="primary-action wide" id="startWorkoutBtn" type="button">Comenzar ahora</button>
+    </article>
+  `;
+  $("#startWorkoutBtn").addEventListener("click", startWorkoutFlow);
 }
 
 function renderWorkoutDays() {
@@ -891,7 +912,6 @@ function bindEvents() {
   $("#newRoutineBtn").addEventListener("click", createRoutine);
   $("#addExerciseBtn").addEventListener("click", () => addExerciseRow());
   $("#deleteRoutineBtn").addEventListener("click", deleteRoutine);
-  $("#startWorkoutBtn").addEventListener("click", startWorkoutFlow);
   $("#backToDaysBtn").addEventListener("click", leaveWorkoutFlow);
   $("#timerBtn").addEventListener("click", startTimer);
   $("#clearHistoryBtn").addEventListener("click", async () => {

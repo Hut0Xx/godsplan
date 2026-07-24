@@ -27,9 +27,9 @@
       </aside>
 
       <nav class="nav" aria-label="Navegacion principal">
-        <button class="nav-item active" data-view="dashboard" type="button">Inicio</button>
-        <button class="nav-item" data-view="routines" type="button">Rutinas</button>
-        <button class="nav-item" data-view="workout" type="button">Entrenar</button>
+          <button class="nav-item" data-view="dashboard" type="button">Inicio</button>
+          <button class="nav-item" data-view="routines" type="button">Rutinas</button>
+          <button class="nav-item active" data-view="workout" type="button">Entrenar</button>
         <button class="nav-item" data-view="history" type="button">Historial</button>
         <button class="nav-item" data-view="backup" type="button">Datos</button>
       </nav>
@@ -38,12 +38,12 @@
         <header class="topbar">
           <div>
             <p class="eyebrow" id="todayLabel"></p>
-            <h1 id="pageTitle">Tu plan de entrenamiento</h1>
+            <h1 id="pageTitle">Entrenar</h1>
           </div>
           <button class="primary-action" data-view-link="workout" type="button">Empezar sesion</button>
         </header>
 
-        <section class="view active" id="dashboardView">
+        <section class="view" id="dashboardView">
           <div class="hero">
             <div class="hero-copy">
               <p class="eyebrow">Hoy</p>
@@ -135,14 +135,12 @@
           </div>
         </section>
 
-        <section class="view" id="workoutView">
+        <section class="view active" id="workoutView">
           <div class="mobile-workout-shell">
             <section class="workout-picker panel" id="workoutPicker">
-              <div class="panel-heading">
-                <h2>Elige el dia</h2>
-              </div>
+              <div id="quickStartWorkout"></div>
+              <h2 class="section-title">Cambiar dia</h2>
               <div class="day-selector" id="workoutDaySelector"></div>
-              <button class="primary-action wide" id="startWorkoutBtn" type="button">Comenzar entrenamiento</button>
             </section>
 
             <section class="workout-session panel" id="workoutSession" hidden>

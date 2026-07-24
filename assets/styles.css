@@ -486,15 +486,46 @@ textarea {
   margin-bottom: 18px;
 }
 
+.quick-start-card {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-left-width: 6px;
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg, rgba(224, 177, 91, 0.15), rgba(113, 199, 168, 0.08)),
+    var(--surface-2);
+}
+
+.quick-start-card h2 {
+  font-size: 1.42rem;
+  line-height: 1.08;
+}
+
+.quick-start-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.section-title {
+  margin: 4px 0 12px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
 .day-card {
   display: grid;
-  gap: 7px;
+  gap: 5px;
   width: 100%;
-  min-height: 92px;
+  min-height: 78px;
   border: 1px solid var(--line);
   border-left-width: 5px;
   border-radius: 8px;
-  padding: 14px;
+  padding: 12px 14px;
   color: var(--text);
   text-align: left;
   background: var(--surface-2);
@@ -512,7 +543,7 @@ textarea {
 }
 
 .day-card strong {
-  font-size: 1.05rem;
+  font-size: 1rem;
 }
 
 .session-top {
@@ -1315,6 +1346,8 @@ h2 {
 }
 
 .session-top {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
   position: sticky;
   z-index: 12;
   top: calc(76px + env(safe-area-inset-top));
@@ -1395,11 +1428,9 @@ h2 {
 }
 
 .exercise-actions {
-  position: sticky;
-  bottom: calc(78px + env(safe-area-inset-bottom));
-  z-index: 10;
-  padding-top: 8px;
-  background: linear-gradient(180deg, transparent, rgba(12, 13, 14, 0.94) 36%);
+  position: static;
+  padding-top: 4px;
+  background: transparent;
 }
 
 .primary-action,
