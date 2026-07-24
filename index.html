@@ -5,8 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>GodsPlan Gym</title>
     <meta name="theme-color" content="#111315">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="GodsPlan">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="apple-touch-icon" href="assets/godsplan-icon.png">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="stylesheet" href="assets/styles.css">
   </head>
   <body>
@@ -19,14 +24,15 @@
             <span>Gym tracker personal</span>
           </div>
         </div>
-        <nav class="nav" aria-label="Navegacion principal">
-          <button class="nav-item active" data-view="dashboard" type="button">Inicio</button>
-          <button class="nav-item" data-view="routines" type="button">Rutinas</button>
-          <button class="nav-item" data-view="workout" type="button">Entrenar</button>
-          <button class="nav-item" data-view="history" type="button">Historial</button>
-          <button class="nav-item" data-view="backup" type="button">Datos</button>
-        </nav>
       </aside>
+
+      <nav class="nav" aria-label="Navegacion principal">
+        <button class="nav-item active" data-view="dashboard" type="button">Inicio</button>
+        <button class="nav-item" data-view="routines" type="button">Rutinas</button>
+        <button class="nav-item" data-view="workout" type="button">Entrenar</button>
+        <button class="nav-item" data-view="history" type="button">Historial</button>
+        <button class="nav-item" data-view="backup" type="button">Datos</button>
+      </nav>
 
       <main class="main">
         <header class="topbar">
@@ -40,9 +46,9 @@
         <section class="view active" id="dashboardView">
           <div class="hero">
             <div class="hero-copy">
-              <p class="eyebrow">Panel personal</p>
-              <h2>Controla pesos, series y progreso desde el movil.</h2>
-              <p>Tus datos se guardan en este navegador. Exporta un backup JSON cuando quieras proteger o mover tu historial.</p>
+              <p class="eyebrow">Hoy</p>
+              <h2>Listo para entrenar.</h2>
+              <p>Elige rutina, registra pesos y revisa si toca subir carga.</p>
             </div>
             <div class="hero-panel">
               <span class="hero-number" id="dashboardSessionCount">0</span>

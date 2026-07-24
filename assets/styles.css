@@ -1051,3 +1051,395 @@ textarea {
     overflow-x: auto;
   }
 }
+
+/* Mobile-only app shell */
+html {
+  background: #08090a;
+}
+
+body {
+  min-height: 100svh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 50% -120px, rgba(224, 177, 91, 0.22), transparent 330px),
+    linear-gradient(180deg, #151719 0%, #0f1113 48%, #0a0b0c 100%);
+}
+
+.app-shell {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  min-height: 100svh;
+  margin: 0 auto;
+  border-inline: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(12, 13, 14, 0.84);
+}
+
+.sidebar {
+  position: fixed;
+  z-index: 20;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  width: min(100%, 480px);
+  height: calc(74px + env(safe-area-inset-top));
+  align-items: end;
+  margin: 0 auto;
+  padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(12, 13, 14, 0.86);
+  backdrop-filter: blur(20px);
+}
+
+.brand {
+  width: 100%;
+  margin: 0;
+}
+
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+}
+
+.brand strong {
+  font-size: 1.05rem;
+  line-height: 1.1;
+}
+
+.brand span {
+  font-size: 0.78rem;
+}
+
+.nav {
+  position: fixed;
+  z-index: 30;
+  right: 10px;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  left: 10px;
+  display: grid;
+  max-width: 460px;
+  margin: 0 auto;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  background: rgba(18, 20, 22, 0.92);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(22px);
+}
+
+.nav-item {
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 16px;
+  color: var(--muted);
+  text-align: center;
+  font-size: clamp(0.66rem, 2.7vw, 0.78rem);
+  font-weight: 850;
+  line-height: 1;
+  background: transparent;
+}
+
+.nav-item.active {
+  color: #111315;
+  background: var(--accent);
+}
+
+.nav-item:hover {
+  border: 0;
+}
+
+.main {
+  width: 100%;
+  min-height: 100svh;
+  padding: calc(92px + env(safe-area-inset-top)) 14px calc(96px + env(safe-area-inset-bottom));
+}
+
+.topbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.topbar .primary-action {
+  display: none;
+}
+
+.eyebrow {
+  margin-bottom: 5px;
+  font-size: 0.7rem;
+}
+
+h1 {
+  font-size: 1.55rem;
+  line-height: 1.05;
+}
+
+h2 {
+  font-size: 1.06rem;
+}
+
+.view.active {
+  display: grid;
+  gap: 14px;
+}
+
+.hero,
+.panel,
+.stat-card,
+.routine-card,
+.record-item,
+.history-item,
+.next-card,
+.workout-card,
+.week-card,
+.note-block,
+.day-card,
+.mobile-set-row,
+.progress-advice {
+  border-radius: 18px;
+}
+
+.hero {
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 0;
+  padding: 16px;
+  border-color: rgba(224, 177, 91, 0.18);
+  background:
+    linear-gradient(135deg, rgba(224, 177, 91, 0.18), rgba(113, 199, 168, 0.08)),
+    rgba(25, 28, 31, 0.92);
+}
+
+.hero-copy h2 {
+  margin-bottom: 8px;
+  font-size: 1.46rem;
+  line-height: 1.08;
+}
+
+.hero-copy p:last-child {
+  font-size: 0.88rem;
+}
+
+.hero-panel {
+  min-height: 76px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(17, 19, 21, 0.52);
+}
+
+.hero-number {
+  font-size: 2.45rem;
+}
+
+.stats-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+.stat-card {
+  padding: 14px;
+}
+
+.stat-card strong {
+  margin-top: 6px;
+  font-size: 1.38rem;
+}
+
+.content-grid,
+.split-layout,
+.settings-grid,
+.form-row,
+.notes-grid {
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.panel {
+  padding: 15px;
+}
+
+.panel-heading {
+  margin-bottom: 12px;
+}
+
+.week-grid,
+.day-selector {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.week-card,
+.day-card,
+.routine-card,
+.history-item,
+.record-item,
+.next-card {
+  min-height: auto;
+  padding: 14px;
+}
+
+.week-card {
+  border-left-width: 5px;
+}
+
+.routine-card,
+.day-card {
+  border-left-width: 5px;
+}
+
+.mobile-workout-shell {
+  max-width: none;
+}
+
+.workout-picker,
+.workout-session {
+  min-height: auto;
+}
+
+.workout-session.panel,
+.workout-picker.panel {
+  padding: 12px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.session-top {
+  position: sticky;
+  z-index: 12;
+  top: calc(76px + env(safe-area-inset-top));
+  margin: -2px -2px 12px;
+  padding: 8px 0;
+  background: linear-gradient(180deg, rgba(12, 13, 14, 0.96), rgba(12, 13, 14, 0.7));
+  backdrop-filter: blur(16px);
+}
+
+.timer {
+  justify-content: space-between;
+}
+
+#timerDisplay {
+  min-width: 72px;
+  font-size: 1.25rem;
+}
+
+.exercise-focus {
+  gap: 13px;
+}
+
+.exercise-progress {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3px;
+}
+
+.exercise-progress strong {
+  text-align: left;
+}
+
+.exercise-model {
+  min-height: 0;
+  padding: 10px;
+  border-radius: 20px;
+}
+
+.exercise-gif {
+  width: 100%;
+  max-height: 250px;
+}
+
+.exercise-title-block h2 {
+  font-size: 1.48rem;
+}
+
+.tip-list {
+  gap: 6px;
+}
+
+.tip-list span {
+  border-radius: 999px;
+  font-size: 0.76rem;
+}
+
+.mobile-set-row {
+  grid-template-columns: 44px minmax(0, 0.45fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  padding: 9px;
+}
+
+.mobile-set-row label {
+  font-size: 0.72rem;
+}
+
+.mobile-set-row input {
+  min-height: 42px;
+  padding: 9px;
+}
+
+.set-check,
+.mobile-set-row .set-number {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  justify-content: center;
+}
+
+.exercise-actions {
+  position: sticky;
+  bottom: calc(78px + env(safe-area-inset-bottom));
+  z-index: 10;
+  padding-top: 8px;
+  background: linear-gradient(180deg, transparent, rgba(12, 13, 14, 0.94) 36%);
+}
+
+.primary-action,
+.secondary-action,
+.danger-action,
+.text-button,
+.import-button {
+  min-height: 46px;
+  border-radius: 15px;
+}
+
+input,
+select,
+textarea {
+  border-radius: 15px;
+}
+
+.exercise-row {
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 18px;
+  background: var(--surface-2);
+}
+
+.icon-button {
+  width: 100%;
+  border-radius: 14px;
+}
+
+.form-actions {
+  flex-direction: column-reverse;
+}
+
+textarea {
+  min-height: 230px;
+}
+
+@media (min-width: 481px) {
+  body {
+    padding: 0;
+  }
+}
