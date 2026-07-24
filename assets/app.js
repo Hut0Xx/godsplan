@@ -19,6 +19,41 @@ const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(sel
 const storageKey = "godsplanGymData";
 const exerciseGifBase = "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0";
 let exerciseGifIndexPromise = null;
+const exerciseMediaOverrides = {
+  "press inclinado con mancuernas": "pectorals/dumbbell-incline-bench-press",
+  "press inclinado": "pectorals/dumbbell-incline-bench-press",
+  "press convergente en maquina": "pectorals/lever-incline-chest-press-v-2",
+  "press maquina": "pectorals/lever-chest-press",
+  "pec deck": "pectorals/lever-seated-fly",
+  "extension con barra recta/v": "triceps/cable-pushdown",
+  "extension por encima de la cabeza con cuerda": "triceps/cable-overhead-triceps-extension-rope-attachment",
+  "jalon al pecho": "lats/cable-bar-lateral-pulldown",
+  "jalon": "lats/cable-bar-lateral-pulldown",
+  "remo sentado": "upper-back/cable-low-seated-row",
+  "remo unilateral en polea": "upper-back/cable-seated-one-arm-alternate-row",
+  "predicador": "biceps/barbell-preacher-curl",
+  "martillo": "biceps/dumbbell-alternate-seated-hammer-curl",
+  "bayesian curl": "biceps/cable-one-arm-curl",
+  "curl inclinado": "biceps/dumbbell-incline-curl",
+  "curl polea baja": "biceps/cable-curl",
+  "press militar maquina": "delts/lever-shoulder-press",
+  "elevaciones laterales polea": "delts/cable-one-arm-lateral-raise",
+  "elevaciones laterales maquina": "delts/lever-lateral-raise",
+  "elevaciones laterales": "delts/dumbbell-lateral-raise",
+  "pec deck inverso": "delts/cable-seated-rear-lateral-raise",
+  "face pull": "delts/cable-standing-rear-delt-row-with-rope",
+  "jalon cuerda": "triceps/cable-pushdown-with-rope-attachment",
+  "extension unilateral": "triceps/cable-standing-one-arm-triceps-extension",
+  "extension cuerda": "triceps/cable-pushdown-with-rope-attachment",
+  "prensa": "glutes/sled-45-leg-press",
+  "hack squat": "glutes/sled-hack-squat",
+  "extension de cuadriceps": "quads/lever-leg-extension",
+  "femoral sentado": "hamstrings/lever-seated-leg-curl",
+  "femoral tumbado": "hamstrings/lever-lying-leg-curl",
+  "gemelos": "calves/sled-calf-press-on-leg-press",
+  "crunch maquina": "abs/lever-seated-crunch",
+  "crunch polea": "abs/cable-kneeling-crunch"
+};
 
 function uid(prefix) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
@@ -299,48 +334,60 @@ function scoreExerciseMedia(exercise, terms) {
 }
 
 async function findExerciseMedia(target) {
+  const override = exerciseMediaOverrides[normalizeExerciseName(target.name)];
+  if (override) {
+    return {
+      name: target.name,
+      id: override,
+      gifUrl: `${exerciseGifBase}/${override}.gif`
+    };
+  }
+
   const exercises = await exerciseGifIndex();
   const terms = mediaSearchTerms(target.name, target.group);
   return exercises
     .map((exercise) => ({ exercise, score: scoreExerciseMedia(exercise, terms) }))
-    .filter((item) => item.score > 0 && item.exercise.gifUrl)
+    .filter((item) => item.score >= 100 && item.exercise.gifUrl)
     .sort((a, b) => b.score - a.score)[0]?.exercise || null;
 }
 
-function exerciseMediaHtml(target, type) {
+function exerciseMediaHtml(target) {
   return `
     <img class="exercise-gif" id="exerciseGif" alt="${escapeHtml(target.name || "Ejercicio")}" hidden>
-    <div class="exercise-fallback" id="exerciseFallback">${exerciseDrawing(type)}</div>
-    <span class="exercise-media-caption" id="exerciseMediaCaption">Buscando GIF del ejercicio...</span>
+    <div class="exercise-media-placeholder" id="exerciseMediaPlaceholder">Buscando GIF del ejercicio...</div>
+    <span class="exercise-media-caption" id="exerciseMediaCaption"></span>
   `;
 }
 
 async function loadExerciseMedia(target) {
   const image = $("#exerciseGif");
-  const fallback = $("#exerciseFallback");
+  const placeholder = $("#exerciseMediaPlaceholder");
   const caption = $("#exerciseMediaCaption");
-  if (!image || !fallback) return;
+  if (!image || !placeholder) return;
   try {
     const media = await findExerciseMedia(target);
     if (!media?.gifUrl) {
-      if (caption) caption.textContent = "No encontre un GIF exacto; usando animacion orientativa.";
+      placeholder.textContent = "No encontre un GIF claro para este ejercicio.";
+      if (caption) caption.textContent = "Cuando me digas que ejercicios cambias, lo ajusto con el movimiento correcto.";
       return;
     }
     image.onload = () => {
       image.hidden = false;
-      fallback.hidden = true;
+      placeholder.hidden = true;
       if (caption) caption.textContent = `Referencia visual: ${media.name || target.name}`;
     };
     image.onerror = () => {
       image.hidden = true;
-      fallback.hidden = false;
-      if (caption) caption.textContent = "No se pudo cargar el GIF; usando animacion orientativa.";
+      placeholder.hidden = false;
+      placeholder.textContent = "No se pudo cargar el GIF.";
+      if (caption) caption.textContent = "Revisa conexion o dime el ejercicio exacto para cambiarlo.";
     };
     image.src = media.gifUrl;
     image.title = media.name || target.name || "";
   } catch (error) {
-    fallback.hidden = false;
-    if (caption) caption.textContent = "Sin internet: usando animacion orientativa.";
+    placeholder.hidden = false;
+    placeholder.textContent = "Sin internet no puedo cargar el GIF.";
+    if (caption) caption.textContent = "";
   }
 }
 
@@ -677,7 +724,6 @@ function renderExerciseScreen() {
   const exerciseIndex = workoutSession.currentExercise;
   const draftExercise = draft[exerciseIndex];
   const target = routine.exercises[exerciseIndex] || { group: "", name: draftExercise.name, sets: draftExercise.sets.length, reps: "" };
-  const type = movementType(target.name, target.group);
   const previousWeight = previousWeightForExercise(target.name);
   const knownAs = exerciseKnownAs(target.name, target.group);
 
@@ -687,7 +733,7 @@ function renderExerciseScreen() {
         <span>Ejercicio ${exerciseIndex + 1} de ${total}</span>
         <strong>${escapeHtml(routine.day || "")} - ${escapeHtml(routine.name || "")}</strong>
       </div>
-      <div class="exercise-model">${exerciseMediaHtml(target, type)}</div>
+      <div class="exercise-model">${exerciseMediaHtml(target)}</div>
       <div class="exercise-title-block">
         <span>${escapeHtml(target.group || "Ejercicio")}</span>
         <h2>${escapeHtml(target.name || draftExercise.name)}</h2>
