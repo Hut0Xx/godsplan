@@ -65,14 +65,11 @@ button {
 }
 
 .brand-mark {
-  display: grid;
   width: 48px;
   height: 48px;
-  place-items: center;
   border-radius: 8px;
-  color: #111315;
-  background: var(--accent);
-  font-weight: 900;
+  object-fit: cover;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
 }
 
 .brand strong,
