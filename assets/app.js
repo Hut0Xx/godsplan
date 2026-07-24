@@ -5,6 +5,7 @@ let workoutDraft = {};
 let workoutSession = { started: false, routineId: state.selectedRoutineId || state.routines[0]?.id, currentExercise: 0 };
 let timer = null;
 let timerRemaining = 0;
+let touchStart = null;
 
 const titles = {
   dashboard: "Tu plan de entrenamiento",
@@ -140,6 +141,10 @@ function escapeHtml(value) {
     '"': "&quot;",
     "'": "&#039;"
   }[char]));
+}
+
+function tapFeedback() {
+  if (navigator.vibrate) navigator.vibrate(12);
 }
 
 function movementType(name, group = "") {
@@ -652,12 +657,15 @@ function startWorkoutFlow() {
     showError("Este dia no tiene ejercicios para registrar.");
     return;
   }
+  tapFeedback();
   ensureWorkoutDraft(routine);
   workoutSession = { started: true, routineId: routine.id, currentExercise: 0 };
   renderWorkout();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function leaveWorkoutFlow() {
+  tapFeedback();
   workoutSession.started = false;
   renderWorkout();
 }
@@ -737,10 +745,87 @@ function progressSuggestion(target, draftExercise) {
   return `Manten el peso hasta lograr ${rule.requiredReps} reps en las ${rule.requiredSets} series con buena tecnica.`;
 }
 
+function workoutCompletion(draft) {
+  const sets = draft.flatMap((exercise) => exercise.sets || []);
+  const done = sets.filter((set) => set.done).length;
+  return {
+    done,
+    total: sets.length,
+    percent: sets.length ? Math.round((done / sets.length) * 100) : 0
+  };
+}
+
+function navigateExercise(delta) {
+  const routine = getWorkoutRoutine();
+  const draft = ensureWorkoutDraft(routine);
+  const next = workoutSession.currentExercise + delta;
+  if (next < 0 || next >= draft.length) return;
+  tapFeedback();
+  workoutSession.currentExercise = next;
+  renderExerciseScreen();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function bindSwipeNavigation(node) {
+  node.addEventListener("touchstart", (event) => {
+    if (event.target.closest("button, input, textarea, select, label")) return;
+    const touch = event.changedTouches[0];
+    touchStart = { x: touch.clientX, y: touch.clientY };
+  }, { passive: true });
+
+  node.addEventListener("touchend", (event) => {
+    if (!touchStart) return;
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - touchStart.x;
+    const deltaY = touch.clientY - touchStart.y;
+    touchStart = null;
+    if (Math.abs(deltaX) < 64 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return;
+    navigateExercise(deltaX < 0 ? 1 : -1);
+  }, { passive: true });
+}
+
+function setNumericValue(input, value) {
+  const min = Number(input.min || 0);
+  const max = Number(input.max || 999);
+  const rounded = Math.max(min, Math.min(max, value));
+  input.value = Number.isInteger(rounded) ? String(rounded) : String(Number(rounded.toFixed(2)));
+}
+
+function adjustSetValue(button) {
+  const row = button.closest(".mobile-set-row");
+  const input = $(`.${button.dataset.target}`, row);
+  const step = Number(button.dataset.step || input.step || 1);
+  const current = Number(input.value) || 0;
+  setNumericValue(input, current + step);
+  syncWorkout({ currentTarget: row });
+  tapFeedback();
+  renderExerciseScreen();
+}
+
+function toggleSetDone(row, forceDone = null) {
+  const routine = getWorkoutRoutine();
+  const set = workoutDraft[routine.id][Number(row.dataset.exercise)].sets[Number(row.dataset.set)];
+  set.done = forceDone ?? !set.done;
+  tapFeedback();
+  renderExerciseScreen();
+}
+
+function markCurrentExerciseDone() {
+  const routine = getWorkoutRoutine();
+  const draft = ensureWorkoutDraft(routine);
+  const exercise = draft[workoutSession.currentExercise];
+  exercise.sets.forEach((set) => {
+    set.done = true;
+  });
+  tapFeedback();
+  renderExerciseScreen();
+}
+
 function renderExerciseScreen() {
   const routine = getWorkoutRoutine();
   const draft = ensureWorkoutDraft(routine);
   const total = draft.length;
+  const completion = workoutCompletion(draft);
   workoutSession.currentExercise = Math.max(0, Math.min(workoutSession.currentExercise, total - 1));
   const exerciseIndex = workoutSession.currentExercise;
   const draftExercise = draft[exerciseIndex];
@@ -753,6 +838,14 @@ function renderExerciseScreen() {
       <div class="exercise-progress">
         <span>Ejercicio ${exerciseIndex + 1} de ${total}</span>
         <strong>${escapeHtml(routine.day || "")} - ${escapeHtml(routine.name || "")}</strong>
+      </div>
+      <div class="session-progress" aria-label="${completion.percent}% del entrenamiento completado">
+        <span style="width:${completion.percent}%"></span>
+      </div>
+      <div class="exercise-jump-strip" aria-label="Cambiar ejercicio">
+        ${draft.map((exercise, index) => `
+          <button class="${index === exerciseIndex ? "active" : ""}" data-exercise-jump="${index}" type="button" aria-label="Ir a ${escapeHtml(exercise.name)}">${index + 1}</button>
+        `).join("")}
       </div>
       <div class="exercise-model">${exerciseMediaHtml(target)}</div>
       <div class="exercise-title-block">
@@ -770,12 +863,27 @@ function renderExerciseScreen() {
           <div class="mobile-set-row ${set.done ? "done" : ""}" data-exercise="${exerciseIndex}" data-set="${setIndex}">
             <button class="set-check" type="button" aria-label="Marcar serie ${setIndex + 1}">${set.done ? "OK" : ""}</button>
             <span class="set-number">S${setIndex + 1}</span>
-            <label>Reps<input class="workout-reps" type="number" inputmode="numeric" min="0" max="100" value="${escapeHtml(set.reps)}"></label>
-            <label>Peso<input class="workout-weight" type="number" inputmode="decimal" min="0" max="500" step="0.5" value="${escapeHtml(set.weight)}"></label>
+            <div class="stepper-field">
+              <span>Reps</span>
+              <div class="stepper-control">
+                <button class="stepper-btn" data-target="workout-reps" data-step="-1" type="button" aria-label="Bajar repeticiones">-</button>
+                <input class="workout-reps" type="number" inputmode="numeric" min="0" max="100" value="${escapeHtml(set.reps)}" aria-label="Repeticiones serie ${setIndex + 1}">
+                <button class="stepper-btn" data-target="workout-reps" data-step="1" type="button" aria-label="Subir repeticiones">+</button>
+              </div>
+            </div>
+            <div class="stepper-field">
+              <span>Peso</span>
+              <div class="stepper-control">
+                <button class="stepper-btn" data-target="workout-weight" data-step="-2.5" type="button" aria-label="Bajar peso">-</button>
+                <input class="workout-weight" type="number" inputmode="decimal" min="0" max="500" step="0.5" value="${escapeHtml(set.weight)}" aria-label="Peso serie ${setIndex + 1}">
+                <button class="stepper-btn" data-target="workout-weight" data-step="2.5" type="button" aria-label="Subir peso">+</button>
+              </div>
+            </div>
           </div>
         `).join("")}
       </div>
       <div class="progress-advice">${escapeHtml(progressSuggestion(target, draftExercise))}</div>
+      <button class="secondary-action wide" id="markExerciseDoneBtn" type="button">Marcar ejercicio hecho</button>
       <div class="exercise-actions">
         <button class="secondary-action" id="prevExerciseBtn" type="button" ${exerciseIndex === 0 ? "disabled" : ""}>Anterior</button>
         ${
@@ -787,24 +895,35 @@ function renderExerciseScreen() {
     </article>
   `;
 
-  $$(".mobile-set-row").forEach((row) => {
-    row.addEventListener("input", syncWorkout);
-    $(".set-check", row).addEventListener("click", () => {
-      const set = draft[Number(row.dataset.exercise)].sets[Number(row.dataset.set)];
-      set.done = !set.done;
+  $$("#workoutExerciseScreen [data-exercise-jump]").forEach((button) => {
+    button.addEventListener("click", () => {
+      workoutSession.currentExercise = Number(button.dataset.exerciseJump);
+      tapFeedback();
       renderExerciseScreen();
+      window.scrollTo({ top: 0, behavior: "smooth" });
     });
   });
 
+  $$(".mobile-set-row").forEach((row) => {
+    row.addEventListener("input", syncWorkout);
+    row.addEventListener("change", () => renderExerciseScreen());
+    $(".set-check", row).addEventListener("click", () => {
+      toggleSetDone(row);
+    });
+    $$(".stepper-btn", row).forEach((button) => button.addEventListener("click", () => adjustSetValue(button)));
+  });
+
   $("#prevExerciseBtn")?.addEventListener("click", () => {
-    workoutSession.currentExercise -= 1;
-    renderExerciseScreen();
+    navigateExercise(-1);
   });
   $("#nextExerciseBtn")?.addEventListener("click", () => {
-    workoutSession.currentExercise += 1;
-    renderExerciseScreen();
+    navigateExercise(1);
+  });
+  $("#markExerciseDoneBtn")?.addEventListener("click", () => {
+    markCurrentExerciseDone();
   });
   $("#finishWorkoutBtn")?.addEventListener("click", showFinishConfirm);
+  bindSwipeNavigation($(".exercise-focus"));
   loadExerciseMedia(target);
 }
 
@@ -820,11 +939,15 @@ function syncWorkout(event) {
 }
 
 function showFinishConfirm() {
+  tapFeedback();
   $("#finishConfirm").hidden = false;
+  document.body.classList.add("modal-open");
+  $("#confirmFinishBtn")?.focus({ preventScroll: true });
 }
 
 function hideFinishConfirm() {
   $("#finishConfirm").hidden = true;
+  document.body.classList.remove("modal-open");
 }
 
 async function finishWorkout() {
