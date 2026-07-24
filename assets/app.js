@@ -780,7 +780,7 @@ function renderExerciseScreen() {
         <button class="secondary-action" id="prevExerciseBtn" type="button" ${exerciseIndex === 0 ? "disabled" : ""}>Anterior</button>
         ${
           exerciseIndex === total - 1
-            ? `<button class="primary-action" id="finishWorkoutBtn" type="button">Guardar sesion</button>`
+            ? `<button class="primary-action" id="finishWorkoutBtn" type="button">Finalizar entrenamiento</button>`
             : `<button class="primary-action" id="nextExerciseBtn" type="button">Siguiente</button>`
         }
       </div>
@@ -804,7 +804,7 @@ function renderExerciseScreen() {
     workoutSession.currentExercise += 1;
     renderExerciseScreen();
   });
-  $("#finishWorkoutBtn")?.addEventListener("click", finishWorkout);
+  $("#finishWorkoutBtn")?.addEventListener("click", showFinishConfirm);
   loadExerciseMedia(target);
 }
 
@@ -819,7 +819,16 @@ function syncWorkout(event) {
   }
 }
 
+function showFinishConfirm() {
+  $("#finishConfirm").hidden = false;
+}
+
+function hideFinishConfirm() {
+  $("#finishConfirm").hidden = true;
+}
+
 async function finishWorkout() {
+  hideFinishConfirm();
   const routine = getWorkoutRoutine();
   const draft = workoutDraft[routine.id];
   if (!draft?.length) return;
@@ -914,6 +923,11 @@ function bindEvents() {
   $("#deleteRoutineBtn").addEventListener("click", deleteRoutine);
   $("#backToDaysBtn").addEventListener("click", leaveWorkoutFlow);
   $("#timerBtn").addEventListener("click", startTimer);
+  $("#cancelFinishBtn").addEventListener("click", hideFinishConfirm);
+  $("#confirmFinishBtn").addEventListener("click", finishWorkout);
+  $("#finishConfirm").addEventListener("click", (event) => {
+    if (event.target.id === "finishConfirm") hideFinishConfirm();
+  });
   $("#clearHistoryBtn").addEventListener("click", async () => {
     try {
       await api("clearHistory");

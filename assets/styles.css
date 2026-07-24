@@ -1471,6 +1471,45 @@ textarea {
   min-height: 230px;
 }
 
+.confirm-modal {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: grid;
+  place-items: end center;
+  padding: 18px 14px calc(18px + env(safe-area-inset-bottom));
+  background: rgba(0, 0, 0, 0.58);
+  backdrop-filter: blur(10px);
+}
+
+.confirm-dialog {
+  display: grid;
+  width: min(100%, 440px);
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  background: rgba(25, 28, 31, 0.98);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.52);
+}
+
+.confirm-dialog h2 {
+  font-size: 1.24rem;
+  line-height: 1.15;
+}
+
+.confirm-dialog p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 10px;
+}
+
 @media (min-width: 481px) {
   body {
     padding: 0;
