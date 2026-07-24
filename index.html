@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GodsPlan Gym</title>
+    <meta name="theme-color" content="#111315">
+    <link rel="stylesheet" href="assets/styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">GP</span>
+          <div>
+            <strong>GodsPlan</strong>
+            <span>Gym tracker personal</span>
+          </div>
+        </div>
+        <nav class="nav" aria-label="Navegacion principal">
+          <button class="nav-item active" data-view="dashboard" type="button">Inicio</button>
+          <button class="nav-item" data-view="routines" type="button">Rutinas</button>
+          <button class="nav-item" data-view="workout" type="button">Entrenar</button>
+          <button class="nav-item" data-view="history" type="button">Historial</button>
+          <button class="nav-item" data-view="backup" type="button">Datos</button>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="todayLabel"></p>
+            <h1 id="pageTitle">Tu plan de entrenamiento</h1>
+          </div>
+          <button class="primary-action" data-view-link="workout" type="button">Empezar sesion</button>
+        </header>
+
+        <section class="view active" id="dashboardView">
+          <div class="hero">
+            <div class="hero-copy">
+              <p class="eyebrow">Panel personal</p>
+              <h2>Controla pesos, series y progreso desde el movil.</h2>
+              <p>Tus datos se guardan en este navegador. Exporta un backup JSON cuando quieras proteger o mover tu historial.</p>
+            </div>
+            <div class="hero-panel">
+              <span class="hero-number" id="dashboardSessionCount">0</span>
+              <span>sesiones completadas</span>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <article class="stat-card"><span>Rutinas</span><strong id="dashboardRoutineCount">0</strong></article>
+            <article class="stat-card"><span>Sesiones</span><strong id="dashboardSessionStat">0</strong></article>
+            <article class="stat-card"><span>Volumen total</span><strong id="dashboardVolume">0 kg</strong></article>
+            <article class="stat-card"><span>Ultima sesion</span><strong id="dashboardLastSession">Sin datos</strong></article>
+          </div>
+
+          <section class="panel weekly-panel">
+            <div class="panel-heading">
+              <h2>Plan semanal</h2>
+            </div>
+            <div class="week-grid" id="dashboardWeekGrid"></div>
+          </section>
+
+          <div class="content-grid">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Rutina activa</h2>
+                <button class="text-button" data-view-link="workout" type="button">Abrir</button>
+              </div>
+              <div id="dashboardActiveRoutine"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Mejores marcas</h2>
+              </div>
+              <div class="records-list" id="dashboardRecords"></div>
+            </section>
+          </div>
+
+          <section class="panel plan-notes">
+            <div class="panel-heading">
+              <h2>Reglas del plan</h2>
+            </div>
+            <div class="notes-grid" id="notesGrid"></div>
+          </section>
+        </section>
+
+        <section class="view" id="routinesView">
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Rutinas</h2>
+                <button class="primary-action compact" id="newRoutineBtn" type="button">Nueva</button>
+              </div>
+              <div class="routine-list" id="routineList"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-heading">
+                <h2 id="routineEditorTitle">Editor</h2>
+              </div>
+              <form class="editor-form" id="routineForm">
+                <input type="hidden" id="routineId">
+                <label>Dia<input id="routineDay" maxlength="24" required></label>
+                <label>Nombre<input id="routineName" maxlength="42" required></label>
+                <label>Objetivo<input id="routineGoal" maxlength="80" placeholder="Fuerza, volumen, torso..."></label>
+                <label>Cardio<input id="routineCardio" maxlength="100" placeholder="30 min cinta, caminar..."></label>
+                <div class="form-row">
+                  <label>Color<input id="routineColor" type="color" value="#e0b15b"></label>
+                  <label>Descanso segundos<input id="routineRest" type="number" min="15" max="300" step="15" value="90"></label>
+                </div>
+                <div class="exercise-editor">
+                  <div class="panel-heading">
+                    <h3>Ejercicios</h3>
+                    <button class="secondary-action compact" id="addExerciseBtn" type="button">Anadir</button>
+                  </div>
+                  <div id="exerciseEditorList"></div>
+                </div>
+                <div class="form-actions">
+                  <button class="secondary-action" id="deleteRoutineBtn" type="button">Eliminar</button>
+                  <button class="primary-action" type="submit">Guardar rutina</button>
+                </div>
+              </form>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="workoutView">
+          <div class="mobile-workout-shell">
+            <section class="workout-picker panel" id="workoutPicker">
+              <div class="panel-heading">
+                <h2>Elige el dia</h2>
+              </div>
+              <div class="day-selector" id="workoutDaySelector"></div>
+              <button class="primary-action wide" id="startWorkoutBtn" type="button">Comenzar entrenamiento</button>
+            </section>
+
+            <section class="workout-session panel" id="workoutSession" hidden>
+              <div class="session-top">
+                <button class="secondary-action compact" id="backToDaysBtn" type="button">Dias</button>
+                <div class="timer" aria-live="polite">
+                  <span id="timerDisplay">00:00</span>
+                  <button class="secondary-action compact" id="timerBtn" type="button">Descanso</button>
+                </div>
+              </div>
+              <div id="workoutExerciseScreen"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="historyView">
+          <div class="panel">
+            <div class="panel-heading">
+              <h2>Historial</h2>
+              <button class="secondary-action compact" id="clearHistoryBtn" type="button">Limpiar</button>
+            </div>
+            <div class="history-list" id="historyList"></div>
+          </div>
+        </section>
+
+        <section class="view" id="backupView">
+          <div class="panel">
+            <div class="panel-heading">
+              <h2>Datos</h2>
+            </div>
+            <div class="settings-grid">
+              <button class="secondary-action" id="exportBtn" type="button">Exportar JSON</button>
+              <label class="import-button">Importar JSON<input id="importInput" type="file" accept="application/json"></label>
+              <button class="danger-action" id="resetBtn" type="button">Resetear app</button>
+            </div>
+            <textarea id="exportOutput" readonly placeholder="Aqui aparecera tu copia de seguridad."></textarea>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <template id="exerciseTemplate">
+      <article class="exercise-row">
+        <label>Grupo<input class="exercise-group" maxlength="24" placeholder="Pecho"></label>
+        <label>Ejercicio<input class="exercise-name" maxlength="45" required></label>
+        <label>Series<input class="exercise-sets" type="number" min="1" max="12" value="4" required></label>
+        <label>Reps<input class="exercise-reps" maxlength="12" value="8-10" required></label>
+        <button class="icon-button remove-exercise" type="button" aria-label="Eliminar ejercicio">x</button>
+      </article>
+    </template>
+
+    <script>
+      window.GODSPLAN_DATA = {"selectedRoutineId":"monday","notes":{"rest":["Ejercicios grandes: 2-3 minutos.","Ejercicios pequenos: 60-90 segundos."],"rir":["Primera serie: RIR 2.","Segunda serie: RIR 1.","Ultima serie: RIR 0-1.","No fallar en prensa o hack si no hay seguridad. En aislamientos puedes acercarte mucho al fallo."],"progression":["Presses 6-8: cuando hagas 8-8-8-8, subes peso.","Jalones 8-10: cuando hagas 10-10-10-10, subes peso.","Aislamientos 10-15: al llegar al maximo del rango en todas las series con buena tecnica, subes peso."],"habits":["Pasos diarios: 8.000-12.000.","Proteinas: 180-220 g diarios.","Sueno: 7,5-9 horas."]},"routines":[{"id":"monday","day":"Lunes","name":"Pecho + Triceps","goal":"Presses, aislamientos y cardio en cinta","color":"#e0b15b","rest":120,"cardio":"30 min cinta - 5-5,5 km/h - 8-10% inclinacion","exercises":[{"id":"mon-1","group":"Pecho","name":"Press inclinado con mancuernas","sets":4,"reps":"6-8"},{"id":"mon-2","group":"Pecho","name":"Press convergente en maquina","sets":3,"reps":"8-10"},{"id":"mon-3","group":"Pecho","name":"Pec Deck","sets":3,"reps":"12-15"},{"id":"mon-4","group":"Triceps","name":"Extension con barra recta/V","sets":3,"reps":"8-10"},{"id":"mon-5","group":"Triceps","name":"Extension por encima de la cabeza con cuerda","sets":3,"reps":"10-12"}]},{"id":"tuesday","day":"Martes","name":"Espalda + Biceps","goal":"Jalones, remos y curls","color":"#71c7a8","rest":120,"cardio":"30 min cardio","exercises":[{"id":"tue-1","group":"Espalda","name":"Jalon al pecho","sets":4,"reps":"8-10"},{"id":"tue-2","group":"Espalda","name":"Remo sentado","sets":4,"reps":"8-10"},{"id":"tue-3","group":"Espalda","name":"Remo unilateral en polea","sets":3,"reps":"10-12"},{"id":"tue-4","group":"Biceps","name":"Predicador","sets":3,"reps":"8-10"},{"id":"tue-5","group":"Biceps","name":"Martillo","sets":3,"reps":"10-12"},{"id":"tue-6","group":"Biceps","name":"Bayesian Curl","sets":2,"reps":"12-15"}]},{"id":"wednesday","day":"Miercoles","name":"Descanso + caminar","goal":"45-60 minutos caminando","color":"#7fa7dc","rest":60,"cardio":"45-60 min caminando","exercises":[]},{"id":"thursday","day":"Jueves","name":"Pierna","goal":"Cuadriceps, femoral, gemelos y abdomen","color":"#d97665","rest":150,"cardio":"20-25 min cardio","exercises":[{"id":"thu-1","group":"Pierna","name":"Prensa","sets":4,"reps":"8-10"},{"id":"thu-2","group":"Pierna","name":"Hack Squat","sets":3,"reps":"8-10"},{"id":"thu-3","group":"Pierna","name":"Extension de cuadriceps","sets":3,"reps":"12-15"},{"id":"thu-4","group":"Pierna","name":"Femoral sentado","sets":3,"reps":"10-12"},{"id":"thu-5","group":"Pierna","name":"Femoral tumbado","sets":3,"reps":"10-12"},{"id":"thu-6","group":"Pierna","name":"Gemelos","sets":4,"reps":"12-20"},{"id":"thu-7","group":"Abdomen","name":"Crunch maquina","sets":3,"reps":"12-15"},{"id":"thu-8","group":"Abdomen","name":"Crunch polea","sets":3,"reps":"12-15"}]},{"id":"friday","day":"Viernes","name":"Hombros + Brazos","goal":"Hombro completo, biceps y triceps","color":"#b98be0","rest":90,"cardio":"30 min cardio","exercises":[{"id":"fri-1","group":"Hombro","name":"Press militar maquina","sets":3,"reps":"6-8"},{"id":"fri-2","group":"Hombro","name":"Elevaciones laterales polea","sets":3,"reps":"12-15"},{"id":"fri-3","group":"Hombro","name":"Elevaciones laterales maquina","sets":2,"reps":"15-20"},{"id":"fri-4","group":"Hombro","name":"Pec Deck inverso","sets":3,"reps":"12-15"},{"id":"fri-5","group":"Hombro","name":"Face Pull","sets":3,"reps":"12-15"},{"id":"fri-6","group":"Biceps","name":"Curl inclinado","sets":3,"reps":"10-12"},{"id":"fri-7","group":"Biceps","name":"Curl polea baja","sets":3,"reps":"12-15"},{"id":"fri-8","group":"Triceps","name":"Jalon cuerda","sets":3,"reps":"12-15"},{"id":"fri-9","group":"Triceps","name":"Extension unilateral","sets":3,"reps":"12-15"}]},{"id":"saturday","day":"Sabado","name":"Torso","goal":"Pecho, espalda, hombro y brazos","color":"#f08a74","rest":120,"cardio":"35 min cardio","exercises":[{"id":"sat-1","group":"Pecho","name":"Press inclinado","sets":3,"reps":"6-8"},{"id":"sat-2","group":"Pecho","name":"Press maquina","sets":3,"reps":"8-10"},{"id":"sat-3","group":"Espalda","name":"Jalon","sets":3,"reps":"8-10"},{"id":"sat-4","group":"Espalda","name":"Remo sentado","sets":3,"reps":"8-10"},{"id":"sat-5","group":"Hombro","name":"Elevaciones laterales","sets":3,"reps":"15-20"},{"id":"sat-6","group":"Brazos","name":"Predicador","sets":2,"reps":"12-15"},{"id":"sat-7","group":"Brazos","name":"Extension cuerda","sets":2,"reps":"12-15"}]},{"id":"sunday","day":"Domingo","name":"Descanso + caminar","goal":"45-60 minutos andando","color":"#7fa7dc","rest":60,"cardio":"45-60 min andando","exercises":[]}],"sessions":[]};
+      window.GODSPLAN_CSRF = "";
+    </script>
+    <script src="assets/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+data/gym-data.json
+data/gym-data.json.tmp
+data/gym-data.json.lock
+includes/local-config.php
+.tools/
+.vercel/
