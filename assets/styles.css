@@ -374,6 +374,7 @@ textarea {
   padding: 12px;
   color: var(--text);
   background: #111315;
+  font-size: 16px;
   outline: none;
 }
 
@@ -1417,6 +1418,7 @@ h2 {
 .mobile-set-row input {
   min-height: 42px;
   padding: 9px;
+  font-size: 16px;
 }
 
 .set-check,
