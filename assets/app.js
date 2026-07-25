@@ -56,6 +56,48 @@ const exerciseMediaOverrides = {
   "crunch polea": "abs/cable-kneeling-crunch"
 };
 
+const exerciseCatalog = [
+  { group: "Pecho", name: "Press inclinado con mancuernas", sets: 4, reps: "6-8" },
+  { group: "Pecho", name: "Press inclinado", sets: 3, reps: "6-8" },
+  { group: "Pecho", name: "Press convergente en maquina", sets: 3, reps: "8-10" },
+  { group: "Pecho", name: "Press maquina", sets: 3, reps: "8-10" },
+  { group: "Pecho", name: "Pec Deck", sets: 3, reps: "12-15" },
+  { group: "Pecho", name: "Aperturas en polea", sets: 3, reps: "12-15" },
+  { group: "Espalda", name: "Jalon al pecho", sets: 4, reps: "8-10" },
+  { group: "Espalda", name: "Jalon", sets: 3, reps: "8-10" },
+  { group: "Espalda", name: "Remo sentado", sets: 4, reps: "8-10" },
+  { group: "Espalda", name: "Remo unilateral en polea", sets: 3, reps: "10-12" },
+  { group: "Espalda", name: "Remo con mancuerna", sets: 3, reps: "8-10" },
+  { group: "Espalda", name: "Pullover en polea", sets: 3, reps: "12-15" },
+  { group: "Hombro", name: "Press militar maquina", sets: 3, reps: "6-8" },
+  { group: "Hombro", name: "Elevaciones laterales polea", sets: 3, reps: "12-15" },
+  { group: "Hombro", name: "Elevaciones laterales maquina", sets: 2, reps: "15-20" },
+  { group: "Hombro", name: "Elevaciones laterales", sets: 3, reps: "15-20" },
+  { group: "Hombro", name: "Pec Deck inverso", sets: 3, reps: "12-15" },
+  { group: "Hombro", name: "Face Pull", sets: 3, reps: "12-15" },
+  { group: "Biceps", name: "Predicador", sets: 3, reps: "8-10" },
+  { group: "Biceps", name: "Martillo", sets: 3, reps: "10-12" },
+  { group: "Biceps", name: "Bayesian Curl", sets: 2, reps: "12-15" },
+  { group: "Biceps", name: "Curl inclinado", sets: 3, reps: "10-12" },
+  { group: "Biceps", name: "Curl polea baja", sets: 3, reps: "12-15" },
+  { group: "Biceps", name: "Curl barra Z", sets: 3, reps: "8-10" },
+  { group: "Triceps", name: "Extension con barra recta/V", sets: 3, reps: "8-10" },
+  { group: "Triceps", name: "Extension por encima de la cabeza con cuerda", sets: 3, reps: "10-12" },
+  { group: "Triceps", name: "Jalon cuerda", sets: 3, reps: "12-15" },
+  { group: "Triceps", name: "Extension unilateral", sets: 3, reps: "12-15" },
+  { group: "Triceps", name: "Extension cuerda", sets: 2, reps: "12-15" },
+  { group: "Pierna", name: "Prensa", sets: 4, reps: "8-10" },
+  { group: "Pierna", name: "Hack Squat", sets: 3, reps: "8-10" },
+  { group: "Pierna", name: "Extension de cuadriceps", sets: 3, reps: "12-15" },
+  { group: "Pierna", name: "Femoral sentado", sets: 3, reps: "10-12" },
+  { group: "Pierna", name: "Femoral tumbado", sets: 3, reps: "10-12" },
+  { group: "Pierna", name: "Gemelos", sets: 4, reps: "12-20" },
+  { group: "Pierna", name: "Sentadilla multipower", sets: 3, reps: "8-10" },
+  { group: "Pierna", name: "Peso muerto rumano", sets: 3, reps: "8-10" },
+  { group: "Abdomen", name: "Crunch maquina", sets: 3, reps: "12-15" },
+  { group: "Abdomen", name: "Crunch polea", sets: 3, reps: "12-15" }
+];
+
 function uid(prefix) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
@@ -143,6 +185,26 @@ function escapeHtml(value) {
   }[char]));
 }
 
+function catalogExerciseByName(name) {
+  const wanted = normalizeExerciseName(name);
+  return exerciseCatalog.find((exercise) => normalizeExerciseName(exercise.name) === wanted) || null;
+}
+
+function exerciseCatalogOptions(selectedName) {
+  const selected = catalogExerciseByName(selectedName);
+  const groups = [...new Set(exerciseCatalog.map((exercise) => exercise.group))];
+  const options = groups.map((group) => {
+    const items = exerciseCatalog
+      .filter((exercise) => exercise.group === group)
+      .map((exercise) => `<option value="${escapeHtml(exercise.name)}" ${normalizeExerciseName(exercise.name) === normalizeExerciseName(selectedName) ? "selected" : ""}>${escapeHtml(exercise.name)}</option>`)
+      .join("");
+    return `<optgroup label="${escapeHtml(group)}">${items}</optgroup>`;
+  }).join("");
+
+  if (selected || !selectedName) return options;
+  return `<option value="${escapeHtml(selectedName)}" selected>${escapeHtml(selectedName)} (personalizado)</option>${options}`;
+}
+
 function tapFeedback() {
   if (navigator.vibrate) navigator.vibrate(12);
 }
@@ -150,15 +212,17 @@ function tapFeedback() {
 function movementType(name, group = "") {
   const text = `${name} ${group}`.toLowerCase();
   if (text.includes("prensa") || text.includes("hack") || text.includes("sentadilla")) return "legs";
+  if (text.includes("peso muerto")) return "hamstring";
   if (text.includes("cuadriceps")) return "legs";
   if (text.includes("femoral")) return "hamstring";
   if (text.includes("gemelo")) return "calf";
   if (text.includes("crunch") || text.includes("abdomen")) return "core";
   if (text.includes("remo")) return "row";
-  if (text.includes("jalon") || text.includes("dominada")) return "pulldown";
-  if (text.includes("curl") || text.includes("predicador") || text.includes("martillo")) return "curl";
+  if (text.includes("jalon") || text.includes("dominada") || text.includes("pullover")) return "pulldown";
+  if (text.includes("curl") || text.includes("predicador") || text.includes("martillo") || text.includes("barra z")) return "curl";
   if (text.includes("triceps") || text.includes("extension") || text.includes("cuerda")) return "triceps";
   if (text.includes("hombro") || text.includes("militar") || text.includes("lateral") || text.includes("face") || text.includes("inverso")) return "shoulder";
+  if (text.includes("apertura")) return "fly";
   if (text.includes("press")) return "press";
   if (text.includes("pec deck")) return "fly";
   return "generic";
@@ -257,15 +321,19 @@ function mediaSearchTerms(name, group = "") {
     ["press maquina", "machine chest press"],
     ["pec deck inverso", "reverse pec deck"],
     ["pec deck", "pec deck"],
+    ["aperturas polea", "cable fly"],
     ["jalon al pecho", "lat pulldown"],
     ["jalon", "lat pulldown"],
     ["remo sentado", "seated cable row"],
     ["remo unilateral polea", "one arm cable row"],
+    ["remo mancuerna", "dumbbell row"],
+    ["pullover polea", "cable pullover"],
     ["predicador", "preacher curl"],
     ["martillo", "hammer curl"],
     ["bayesian curl", "bayesian curl"],
     ["curl inclinado", "incline dumbbell curl"],
     ["curl polea baja", "cable curl"],
+    ["curl barra z", "ez bar curl"],
     ["extension por encima cabeza cuerda", "overhead cable triceps extension"],
     ["extension barra recta", "cable triceps pushdown"],
     ["jalon cuerda", "rope triceps pushdown"],
@@ -281,6 +349,8 @@ function mediaSearchTerms(name, group = "") {
     ["femoral sentado", "seated leg curl"],
     ["femoral tumbado", "lying leg curl"],
     ["gemelos", "calf raise"],
+    ["sentadilla multipower", "smith machine squat"],
+    ["peso muerto rumano", "romanian deadlift"],
     ["crunch maquina", "machine crunch"],
     ["crunch polea", "cable crunch"]
   ];
@@ -436,24 +506,106 @@ function recordsFromSessions() {
   return Object.values(records).sort((a, b) => b.weight - a.weight);
 }
 
+function startOfLocalDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function localDateKey(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0")
+  ].join("-");
+}
+
+function trainingDayKeys() {
+  return new Set((state.sessions || [])
+    .map((session) => localDateKey(new Date(session.date)))
+    .filter(Boolean));
+}
+
+function calculateTrainingStreak(trainedDays) {
+  const today = startOfLocalDay(new Date());
+  const todayKey = localDateKey(today);
+  const cursor = new Date(today);
+  if (!trainedDays.has(todayKey)) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  let count = 0;
+  while (trainedDays.has(localDateKey(cursor))) {
+    count += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return count;
+}
+
+function renderTrainingCalendar(trainedDays) {
+  const today = startOfLocalDay(new Date());
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const monthOffset = (firstDay.getDay() + 6) % 7;
+  const weekDays = ["L", "M", "X", "J", "V", "S", "D"];
+  const monthLabel = today.toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+  let trainedThisMonth = 0;
+  let missedThisMonth = 0;
+
+  if ($("#dashboardCalendarMonth")) {
+    $("#dashboardCalendarMonth").textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+  }
+
+  const blanks = Array.from({ length: monthOffset }, () => `<span class="calendar-day empty-day"></span>`);
+  const days = Array.from({ length: daysInMonth }, (_, index) => {
+    const dayNumber = index + 1;
+    const date = new Date(year, month, dayNumber);
+    const key = localDateKey(date);
+    const isToday = key === localDateKey(today);
+    const isFuture = date > today;
+    const isTrained = trainedDays.has(key);
+    const status = isFuture ? "future" : isTrained ? "trained" : "missed";
+    const label = isFuture ? "Pendiente" : isTrained ? "Entrenado" : "Sin entreno";
+
+    if (!isFuture && isTrained) trainedThisMonth += 1;
+    if (!isFuture && !isTrained) missedThisMonth += 1;
+
+    return `<span class="calendar-day ${status} ${isToday ? "today" : ""}" aria-label="${dayNumber} ${label}">
+      <strong>${dayNumber}</strong>
+    </span>`;
+  });
+
+  $("#dashboardTrainingCalendar").innerHTML = [
+    ...weekDays.map((day) => `<span class="calendar-weekday">${day}</span>`),
+    ...blanks,
+    ...days
+  ].join("");
+
+  $("#dashboardCalendarSummary").textContent = `${trainedThisMonth} dias entrenados este mes - ${missedThisMonth} dias sin entreno.`;
+}
+
 function renderDashboard() {
   const totalVolume = (state.sessions || []).reduce((sum, session) => sum + (Number(session.volume) || 0), 0);
   const lastSession = state.sessions?.[0];
   const activeRoutine = getRoutine();
+  const trainedDays = trainingDayKeys();
+  const streak = calculateTrainingStreak(trainedDays);
+  const trainedToday = trainedDays.has(localDateKey(new Date()));
   if ($("#todayLabel")) $("#todayLabel").textContent = new Date().toLocaleDateString("es-ES");
   $("#dashboardSessionCount").textContent = state.sessions.length;
   $("#dashboardRoutineCount").textContent = state.routines.length;
   $("#dashboardSessionStat").textContent = state.sessions.length;
+  $("#dashboardStreakStat").textContent = `${streak} ${streak === 1 ? "dia" : "dias"}`;
   $("#dashboardVolume").textContent = `${Math.round(totalVolume).toLocaleString("es-ES")} kg`;
   $("#dashboardLastSession").textContent = lastSession ? new Date(lastSession.date).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit" }) : "Sin datos";
-
-  $("#dashboardWeekGrid").innerHTML = state.routines.map((routine) => `
-    <article class="week-card" style="border-color: ${escapeHtml(routine.color)}">
-      <span>${escapeHtml(routine.day || "Dia")}</span>
-      <strong>${escapeHtml(routine.name)}</strong>
-      <small>${escapeHtml(routine.cardio || routine.goal || "")}</small>
-    </article>
-  `).join("");
+  $("#dashboardStreakDays").textContent = `${streak} ${streak === 1 ? "dia" : "dias"}`;
+  $("#dashboardStreakMessage").textContent = state.sessions.length
+    ? trainedToday
+      ? "Hoy ya cuenta en tu racha."
+      : "Aun puedes entrenar hoy para mantener la racha activa."
+    : "Guarda tu primer entrenamiento para empezar la racha.";
+  renderTrainingCalendar(trainedDays);
 
   const records = recordsFromSessions().slice(0, 5);
   $("#dashboardRecords").innerHTML = records.length
@@ -520,14 +672,23 @@ function renderRoutineEditor() {
   routine.exercises.forEach(addExerciseRow);
 }
 
-function addExerciseRow(exercise = { id: uid("exercise"), group: "", name: "", sets: 3, reps: "10" }) {
+function addExerciseRow(exercise = { id: uid("exercise"), ...exerciseCatalog[0] }) {
   const template = $("#exerciseTemplate").content.cloneNode(true);
   const row = $(".exercise-row", template);
+  const catalogExercise = catalogExerciseByName(exercise.name);
+  const selectedExercise = catalogExercise || exercise;
   row.dataset.id = exercise.id || uid("exercise");
-  $(".exercise-group", row).value = exercise.group || "";
-  $(".exercise-name", row).value = exercise.name || "";
-  $(".exercise-sets", row).value = exercise.sets || 3;
-  $(".exercise-reps", row).value = exercise.reps || "10";
+  $(".exercise-group", row).value = selectedExercise.group || "";
+  $(".exercise-name", row).innerHTML = exerciseCatalogOptions(selectedExercise.name);
+  $(".exercise-sets", row).value = exercise.sets || selectedExercise.sets || 3;
+  $(".exercise-reps", row).value = exercise.reps || selectedExercise.reps || "10";
+  $(".exercise-name", row).addEventListener("change", (event) => {
+    const next = catalogExerciseByName(event.target.value);
+    if (!next) return;
+    $(".exercise-group", row).value = next.group || "";
+    $(".exercise-sets", row).value = next.sets || 3;
+    $(".exercise-reps", row).value = next.reps || "10";
+  });
   $(".remove-exercise", row).addEventListener("click", () => row.remove());
   $("#exerciseEditorList").appendChild(template);
 }
@@ -554,6 +715,7 @@ async function saveRoutine(event) {
   };
   try {
     await api("saveRoutine", { routine });
+    workoutDraft[routine.id] = null;
     editingRoutineId = routine.id;
     renderDynamic();
   } catch (error) {
@@ -571,7 +733,7 @@ function createRoutine() {
     color: "#e0b15b",
     rest: 90,
     cardio: "",
-    exercises: [{ id: uid("exercise"), group: "", name: "Ejercicio", sets: 3, reps: "10" }]
+    exercises: [{ id: uid("exercise"), ...exerciseCatalog[0] }]
   });
   renderDynamic();
 }

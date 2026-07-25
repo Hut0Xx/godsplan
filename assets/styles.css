@@ -225,7 +225,7 @@ h3 {
 }
 
 .stats-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   margin-bottom: 16px;
 }
 
@@ -238,34 +238,142 @@ h3 {
   margin-top: 16px;
 }
 
-.weekly-panel {
+.training-calendar-panel {
   margin-bottom: 16px;
 }
 
-.week-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
+.calendar-month {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
 }
 
-.week-card {
+.streak-summary {
   display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid rgba(113, 199, 168, 0.35);
+  border-radius: 8px;
+  background: rgba(113, 199, 168, 0.09);
+}
+
+.streak-summary span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.streak-summary strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--accent-2);
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.streak-summary p,
+.calendar-summary {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.calendar-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.legend-dot.trained {
+  background: var(--accent-2);
+}
+
+.legend-dot.missed {
+  background: var(--danger);
+}
+
+.legend-dot.future {
+  background: var(--line);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 7px;
-  min-height: 128px;
-  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.calendar-weekday,
+.calendar-day {
+  display: grid;
+  min-width: 0;
+  aspect-ratio: 1;
+  place-items: center;
+}
+
+.calendar-weekday {
+  height: 24px;
+  aspect-ratio: auto;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.calendar-day {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface-2);
 }
 
-.week-card span,
-.week-card small {
-  color: var(--muted);
-  line-height: 1.35;
+.calendar-day strong {
+  font-size: 0.86rem;
 }
 
-.week-card strong {
-  line-height: 1.2;
+.calendar-day.trained {
+  color: #111315;
+  border-color: var(--accent-2);
+  background: var(--accent-2);
+}
+
+.calendar-day.missed {
+  border-color: rgba(224, 98, 98, 0.55);
+  background: rgba(224, 98, 98, 0.13);
+}
+
+.calendar-day.future {
+  color: var(--muted);
+  opacity: 0.72;
+}
+
+.calendar-day.today {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.empty-day {
+  border: 0;
+  background: transparent;
 }
 
 .notes-grid {
@@ -461,6 +569,36 @@ textarea {
   display: grid;
   gap: 8px;
   text-align: left;
+}
+
+.records-panel {
+  grid-column: 1 / -1;
+  border-color: rgba(224, 177, 91, 0.32);
+}
+
+.featured-records {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.featured-records .record-item {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-color: rgba(224, 177, 91, 0.24);
+  background:
+    linear-gradient(135deg, rgba(224, 177, 91, 0.1), rgba(113, 199, 168, 0.05)),
+    var(--surface-2);
+}
+
+.featured-records .record-item strong {
+  font-size: 1.04rem;
+  line-height: 1.18;
+}
+
+.featured-records .record-item .meta {
+  color: var(--accent);
+  font-size: 1rem;
+  font-weight: 900;
 }
 
 .routine-card.active {
@@ -1127,7 +1265,6 @@ textarea {
   .stats-grid,
   .content-grid,
   .split-layout,
-  .week-grid,
   .notes-grid {
     grid-template-columns: 1fr;
   }
@@ -1348,7 +1485,6 @@ h2 {
 .history-item,
 .next-card,
 .workout-card,
-.week-card,
 .note-block,
 .day-card,
 .mobile-set-row,
@@ -1420,14 +1556,12 @@ h2 {
   margin-bottom: 12px;
 }
 
-.week-grid,
 .day-selector {
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
 }
 
-.week-card,
 .day-card,
 .routine-card,
 .history-item,
@@ -1435,10 +1569,6 @@ h2 {
 .next-card {
   min-height: auto;
   padding: 14px;
-}
-
-.week-card {
-  border-left-width: 5px;
 }
 
 .routine-card,

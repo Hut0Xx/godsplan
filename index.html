@@ -59,31 +59,46 @@
           <div class="stats-grid">
             <article class="stat-card"><span>Rutinas</span><strong id="dashboardRoutineCount">0</strong></article>
             <article class="stat-card"><span>Sesiones</span><strong id="dashboardSessionStat">0</strong></article>
+            <article class="stat-card"><span>Racha actual</span><strong id="dashboardStreakStat">0 dias</strong></article>
             <article class="stat-card"><span>Volumen total</span><strong id="dashboardVolume">0 kg</strong></article>
             <article class="stat-card"><span>Ultima sesion</span><strong id="dashboardLastSession">Sin datos</strong></article>
           </div>
 
-          <section class="panel weekly-panel">
+          <section class="panel training-calendar-panel">
             <div class="panel-heading">
-              <h2>Plan semanal</h2>
+              <h2>Calendario de entrenos</h2>
+              <span class="calendar-month" id="dashboardCalendarMonth"></span>
             </div>
-            <div class="week-grid" id="dashboardWeekGrid"></div>
+            <div class="streak-summary">
+              <div>
+                <span>Racha sin fallar</span>
+                <strong id="dashboardStreakDays">0 dias</strong>
+              </div>
+              <p id="dashboardStreakMessage">Guarda tu primer entrenamiento para empezar la racha.</p>
+            </div>
+            <div class="calendar-legend" aria-label="Leyenda del calendario">
+              <span><i class="legend-dot trained"></i>Entrenado</span>
+              <span><i class="legend-dot missed"></i>Sin entreno</span>
+              <span><i class="legend-dot future"></i>Pendiente</span>
+            </div>
+            <div class="calendar-grid" id="dashboardTrainingCalendar"></div>
+            <p class="calendar-summary" id="dashboardCalendarSummary"></p>
           </section>
 
           <div class="content-grid">
+            <section class="panel records-panel">
+              <div class="panel-heading">
+                <h2>Mejores marcas</h2>
+              </div>
+              <div class="records-list featured-records" id="dashboardRecords"></div>
+            </section>
+
             <section class="panel">
               <div class="panel-heading">
                 <h2>Rutina activa</h2>
                 <button class="text-button" data-view-link="workout" type="button">Abrir</button>
               </div>
               <div id="dashboardActiveRoutine"></div>
-            </section>
-
-            <section class="panel">
-              <div class="panel-heading">
-                <h2>Mejores marcas</h2>
-              </div>
-              <div class="records-list" id="dashboardRecords"></div>
             </section>
           </div>
 
@@ -184,8 +199,8 @@
 
     <template id="exerciseTemplate">
       <article class="exercise-row">
-        <label>Grupo<input class="exercise-group" maxlength="24" placeholder="Pecho"></label>
-        <label>Ejercicio<input class="exercise-name" maxlength="45" required></label>
+        <label>Grupo<input class="exercise-group" maxlength="24" placeholder="Pecho" readonly></label>
+        <label>Ejercicio<select class="exercise-name" required></select></label>
         <label>Series<input class="exercise-sets" type="number" min="1" max="12" value="4" required></label>
         <label>Reps<input class="exercise-reps" maxlength="12" value="8-10" required></label>
         <button class="icon-button remove-exercise" type="button" aria-label="Eliminar ejercicio">x</button>
