@@ -1,18 +1,16 @@
-const defaultState = structuredClone(window.GODSPLAN_DATA);
 let state = loadLocalState();
-let editingRoutineId = state.selectedRoutineId || state.routines[0]?.id;
 let workoutDraft = {};
 let workoutSession = { started: false, routineId: state.selectedRoutineId || state.routines[0]?.id, currentExercise: 0 };
 let timer = null;
 let timerRemaining = 0;
+let cardioTimer = null;
 let touchStart = null;
+let confirmAction = null;
 
 const titles = {
   dashboard: "Tu plan de entrenamiento",
-  routines: "Rutinas",
   workout: "Entrenar",
-  history: "Historial",
-  backup: "Datos y backup"
+  history: "Historial"
 };
 
 const $ = (selector, scope = document) => scope.querySelector(selector);
@@ -56,48 +54,6 @@ const exerciseMediaOverrides = {
   "crunch polea": "abs/cable-kneeling-crunch"
 };
 
-const exerciseCatalog = [
-  { group: "Pecho", name: "Press inclinado con mancuernas", sets: 4, reps: "6-8" },
-  { group: "Pecho", name: "Press inclinado", sets: 3, reps: "6-8" },
-  { group: "Pecho", name: "Press convergente en maquina", sets: 3, reps: "8-10" },
-  { group: "Pecho", name: "Press maquina", sets: 3, reps: "8-10" },
-  { group: "Pecho", name: "Pec Deck", sets: 3, reps: "12-15" },
-  { group: "Pecho", name: "Aperturas en polea", sets: 3, reps: "12-15" },
-  { group: "Espalda", name: "Jalon al pecho", sets: 4, reps: "8-10" },
-  { group: "Espalda", name: "Jalon", sets: 3, reps: "8-10" },
-  { group: "Espalda", name: "Remo sentado", sets: 4, reps: "8-10" },
-  { group: "Espalda", name: "Remo unilateral en polea", sets: 3, reps: "10-12" },
-  { group: "Espalda", name: "Remo con mancuerna", sets: 3, reps: "8-10" },
-  { group: "Espalda", name: "Pullover en polea", sets: 3, reps: "12-15" },
-  { group: "Hombro", name: "Press militar maquina", sets: 3, reps: "6-8" },
-  { group: "Hombro", name: "Elevaciones laterales polea", sets: 3, reps: "12-15" },
-  { group: "Hombro", name: "Elevaciones laterales maquina", sets: 2, reps: "15-20" },
-  { group: "Hombro", name: "Elevaciones laterales", sets: 3, reps: "15-20" },
-  { group: "Hombro", name: "Pec Deck inverso", sets: 3, reps: "12-15" },
-  { group: "Hombro", name: "Face Pull", sets: 3, reps: "12-15" },
-  { group: "Biceps", name: "Predicador", sets: 3, reps: "8-10" },
-  { group: "Biceps", name: "Martillo", sets: 3, reps: "10-12" },
-  { group: "Biceps", name: "Bayesian Curl", sets: 2, reps: "12-15" },
-  { group: "Biceps", name: "Curl inclinado", sets: 3, reps: "10-12" },
-  { group: "Biceps", name: "Curl polea baja", sets: 3, reps: "12-15" },
-  { group: "Biceps", name: "Curl barra Z", sets: 3, reps: "8-10" },
-  { group: "Triceps", name: "Extension con barra recta/V", sets: 3, reps: "8-10" },
-  { group: "Triceps", name: "Extension por encima de la cabeza con cuerda", sets: 3, reps: "10-12" },
-  { group: "Triceps", name: "Jalon cuerda", sets: 3, reps: "12-15" },
-  { group: "Triceps", name: "Extension unilateral", sets: 3, reps: "12-15" },
-  { group: "Triceps", name: "Extension cuerda", sets: 2, reps: "12-15" },
-  { group: "Pierna", name: "Prensa", sets: 4, reps: "8-10" },
-  { group: "Pierna", name: "Hack Squat", sets: 3, reps: "8-10" },
-  { group: "Pierna", name: "Extension de cuadriceps", sets: 3, reps: "12-15" },
-  { group: "Pierna", name: "Femoral sentado", sets: 3, reps: "10-12" },
-  { group: "Pierna", name: "Femoral tumbado", sets: 3, reps: "10-12" },
-  { group: "Pierna", name: "Gemelos", sets: 4, reps: "12-20" },
-  { group: "Pierna", name: "Sentadilla multipower", sets: 3, reps: "8-10" },
-  { group: "Pierna", name: "Peso muerto rumano", sets: 3, reps: "8-10" },
-  { group: "Abdomen", name: "Crunch maquina", sets: 3, reps: "12-15" },
-  { group: "Abdomen", name: "Crunch polea", sets: 3, reps: "12-15" }
-];
-
 function uid(prefix) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
@@ -123,17 +79,7 @@ function persistLocalState() {
 }
 
 async function api(action, payload = {}) {
-  if (action === "saveRoutine") {
-    const routine = payload.routine;
-    const index = state.routines.findIndex((item) => item.id === routine.id);
-    if (index >= 0) state.routines[index] = routine;
-    else state.routines.push(routine);
-    state.selectedRoutineId = routine.id;
-  } else if (action === "deleteRoutine") {
-    if (state.routines.length <= 1) throw new Error("Debe quedar al menos una rutina.");
-    state.routines = state.routines.filter((routine) => routine.id !== payload.id);
-    state.selectedRoutineId = state.routines[0]?.id || "";
-  } else if (action === "selectRoutine") {
+  if (action === "selectRoutine") {
     if (!state.routines.some((routine) => routine.id === payload.id)) throw new Error("Rutina no encontrada.");
     state.selectedRoutineId = payload.id;
   } else if (action === "saveSession") {
@@ -152,15 +98,6 @@ async function api(action, payload = {}) {
       volume,
       exercises
     }, ...(state.sessions || [])];
-  } else if (action === "clearHistory") {
-    state.sessions = [];
-  } else if (action === "import") {
-    if (!payload.data || !Array.isArray(payload.data.routines) || !Array.isArray(payload.data.sessions)) {
-      throw new Error("Backup no valido.");
-    }
-    state = payload.data;
-  } else if (action === "reset") {
-    state = structuredClone(defaultState);
   }
 
   persistLocalState();
@@ -183,26 +120,6 @@ function escapeHtml(value) {
     '"': "&quot;",
     "'": "&#039;"
   }[char]));
-}
-
-function catalogExerciseByName(name) {
-  const wanted = normalizeExerciseName(name);
-  return exerciseCatalog.find((exercise) => normalizeExerciseName(exercise.name) === wanted) || null;
-}
-
-function exerciseCatalogOptions(selectedName) {
-  const selected = catalogExerciseByName(selectedName);
-  const groups = [...new Set(exerciseCatalog.map((exercise) => exercise.group))];
-  const options = groups.map((group) => {
-    const items = exerciseCatalog
-      .filter((exercise) => exercise.group === group)
-      .map((exercise) => `<option value="${escapeHtml(exercise.name)}" ${normalizeExerciseName(exercise.name) === normalizeExerciseName(selectedName) ? "selected" : ""}>${escapeHtml(exercise.name)}</option>`)
-      .join("");
-    return `<optgroup label="${escapeHtml(group)}">${items}</optgroup>`;
-  }).join("");
-
-  if (selected || !selectedName) return options;
-  return `<option value="${escapeHtml(selectedName)}" selected>${escapeHtml(selectedName)} (personalizado)</option>${options}`;
 }
 
 function tapFeedback() {
@@ -482,8 +399,6 @@ function switchView(view) {
 
 function renderDynamic() {
   renderDashboard();
-  renderRoutineList();
-  renderRoutineEditor();
   renderWorkout();
   renderHistory();
 }
@@ -636,118 +551,6 @@ function renderDashboard() {
   }
 }
 
-function renderRoutineList() {
-  $("#routineList").innerHTML = state.routines.map((routine) => `
-    <button class="routine-card ${routine.id === editingRoutineId ? "active" : ""}" data-id="${escapeHtml(routine.id)}" type="button" style="border-color:${escapeHtml(routine.color)}">
-      <strong>${escapeHtml(routine.day || "")} - ${escapeHtml(routine.name)}</strong>
-      <span class="meta">${escapeHtml(routine.goal || "")}</span>
-      <span class="meta">${routine.exercises.length ? `${routine.exercises.length} ejercicios` : "Descanso"} - ${escapeHtml(routine.cardio || "")}</span>
-    </button>
-  `).join("");
-
-  $$(".routine-card").forEach((card) => {
-    card.addEventListener("click", async () => {
-      editingRoutineId = card.dataset.id;
-      await api("selectRoutine", { id: editingRoutineId });
-      renderDynamic();
-    });
-  });
-}
-
-function renderRoutineEditor() {
-  const routine = getRoutine(editingRoutineId);
-  if (!routine) return;
-
-  $("#routineEditorTitle").textContent = `${routine.day || ""} - ${routine.name}`;
-  $("#routineId").value = routine.id;
-  $("#routineDay").value = routine.day || "";
-  $("#routineName").value = routine.name || "";
-  $("#routineGoal").value = routine.goal || "";
-  $("#routineCardio").value = routine.cardio || "";
-  $("#routineColor").value = routine.color || "#e0b15b";
-  $("#routineRest").value = routine.rest || 90;
-
-  const list = $("#exerciseEditorList");
-  list.innerHTML = "";
-  routine.exercises.forEach(addExerciseRow);
-}
-
-function addExerciseRow(exercise = { id: uid("exercise"), ...exerciseCatalog[0] }) {
-  const template = $("#exerciseTemplate").content.cloneNode(true);
-  const row = $(".exercise-row", template);
-  const catalogExercise = catalogExerciseByName(exercise.name);
-  const selectedExercise = catalogExercise || exercise;
-  row.dataset.id = exercise.id || uid("exercise");
-  $(".exercise-group", row).value = selectedExercise.group || "";
-  $(".exercise-name", row).innerHTML = exerciseCatalogOptions(selectedExercise.name);
-  $(".exercise-sets", row).value = exercise.sets || selectedExercise.sets || 3;
-  $(".exercise-reps", row).value = exercise.reps || selectedExercise.reps || "10";
-  $(".exercise-name", row).addEventListener("change", (event) => {
-    const next = catalogExerciseByName(event.target.value);
-    if (!next) return;
-    $(".exercise-group", row).value = next.group || "";
-    $(".exercise-sets", row).value = next.sets || 3;
-    $(".exercise-reps", row).value = next.reps || "10";
-  });
-  $(".remove-exercise", row).addEventListener("click", () => row.remove());
-  $("#exerciseEditorList").appendChild(template);
-}
-
-async function saveRoutine(event) {
-  event.preventDefault();
-  const existing = getRoutine(editingRoutineId);
-  const routine = {
-    ...existing,
-    id: $("#routineId").value || uid("routine"),
-    day: $("#routineDay").value.trim() || "Dia",
-    name: $("#routineName").value.trim() || "Rutina",
-    goal: $("#routineGoal").value.trim(),
-    cardio: $("#routineCardio").value.trim(),
-    color: $("#routineColor").value,
-    rest: Number($("#routineRest").value) || 90,
-    exercises: $$(".exercise-row").map((row) => ({
-      id: row.dataset.id || uid("exercise"),
-      group: $(".exercise-group", row).value.trim(),
-      name: $(".exercise-name", row).value.trim(),
-      sets: Number($(".exercise-sets", row).value),
-      reps: $(".exercise-reps", row).value.trim()
-    })).filter((exercise) => exercise.name)
-  };
-  try {
-    await api("saveRoutine", { routine });
-    workoutDraft[routine.id] = null;
-    editingRoutineId = routine.id;
-    renderDynamic();
-  } catch (error) {
-    showError(error.message);
-  }
-}
-
-function createRoutine() {
-  editingRoutineId = uid("routine");
-  state.routines.push({
-    id: editingRoutineId,
-    day: "Nuevo dia",
-    name: "Nueva rutina",
-    goal: "",
-    color: "#e0b15b",
-    rest: 90,
-    cardio: "",
-    exercises: [{ id: uid("exercise"), ...exerciseCatalog[0] }]
-  });
-  renderDynamic();
-}
-
-async function deleteRoutine() {
-  try {
-    await api("deleteRoutine", { id: editingRoutineId });
-    editingRoutineId = state.selectedRoutineId;
-    renderDynamic();
-  } catch (error) {
-    showError(error.message);
-  }
-}
-
 function renderWorkout() {
   renderWorkoutDays();
   renderQuickStartWorkout();
@@ -764,16 +567,15 @@ function renderWorkout() {
 
 function renderQuickStartWorkout() {
   const routine = getWorkoutRoutine();
-  const targetLabel = routine?.exercises?.length ? `${routine.exercises.length} ejercicios` : "Descanso activo";
+  const itemCount = (routine?.exercises?.length || 0) + (routine?.cardio ? 1 : 0);
+  const targetLabel = itemCount ? `${itemCount} ejercicios` : "Descanso activo";
   $("#quickStartWorkout").innerHTML = `
     <article class="quick-start-card" style="border-color:${escapeHtml(routine?.color || "#e0b15b")}">
       <span class="eyebrow">Entreno seleccionado</span>
       <h2>${escapeHtml(routine?.day || "")} - ${escapeHtml(routine?.name || "Rutina")}</h2>
-      <p>${escapeHtml(targetLabel)}${routine?.cardio ? ` - ${escapeHtml(routine.cardio)}` : ""}</p>
-      <button class="primary-action wide" id="startWorkoutBtn" type="button">Comenzar ahora</button>
+      <p>${escapeHtml(targetLabel)}${routine?.cardio ? ` - ${escapeHtml(routine.cardio)}` : ""}. Toca otra vez este dia para iniciar.</p>
     </article>
   `;
-  $("#startWorkoutBtn").addEventListener("click", startWorkoutFlow);
 }
 
 function renderWorkoutDays() {
@@ -781,14 +583,18 @@ function renderWorkoutDays() {
     <button class="day-card ${routine.id === workoutSession.routineId ? "active" : ""}" data-id="${escapeHtml(routine.id)}" type="button" style="border-color:${escapeHtml(routine.color)}">
       <span>${escapeHtml(routine.day || "")}</span>
       <strong>${escapeHtml(routine.name || "")}</strong>
-      <small>${routine.exercises.length ? `${routine.exercises.length} ejercicios` : "Descanso activo"} - ${escapeHtml(routine.cardio || routine.goal || "")}</small>
+      <small>${(routine.exercises.length || routine.cardio) ? `${routine.exercises.length + (routine.cardio ? 1 : 0)} ejercicios` : "Descanso activo"} - ${escapeHtml(routine.cardio || routine.goal || "")}</small>
     </button>
   `).join("");
 
   $$(".day-card").forEach((card) => {
     card.addEventListener("click", async () => {
+      if (card.dataset.id === workoutSession.routineId) {
+        showStartWorkoutConfirm();
+        return;
+      }
+      workoutDraft[card.dataset.id] = null;
       workoutSession = { started: false, routineId: card.dataset.id, currentExercise: 0 };
-      editingRoutineId = card.dataset.id;
       try {
         await api("selectRoutine", { id: card.dataset.id });
         renderDynamic();
@@ -803,20 +609,33 @@ function ensureWorkoutDraft(routine) {
   if (!workoutDraft[routine.id]) {
     workoutDraft[routine.id] = routine.exercises.map((exercise) => ({
       name: exercise.name,
+      group: exercise.group || "",
+      type: "strength",
+      targetSets: exercise.sets,
+      targetReps: exercise.reps,
       sets: Array.from({ length: exercise.sets }, () => ({
         reps: defaultRepsForExercise(exercise),
         weight: previousWeightForExercise(exercise.name),
         done: false
       }))
     }));
+    if (routine.cardio) {
+      workoutDraft[routine.id].push({
+        name: "Cardio",
+        type: "cardio",
+        cardio: routine.cardio,
+        durationSeconds: 0,
+        running: false
+      });
+    }
   }
   return workoutDraft[routine.id];
 }
 
 function startWorkoutFlow() {
   const routine = getWorkoutRoutine();
-  if (!routine?.exercises.length) {
-    showError("Este dia no tiene ejercicios para registrar.");
+  if (!routine?.exercises.length && !routine?.cardio) {
+    showError("Este dia no tiene ejercicios ni cardio para registrar.");
     return;
   }
   tapFeedback();
@@ -828,6 +647,7 @@ function startWorkoutFlow() {
 
 function leaveWorkoutFlow() {
   tapFeedback();
+  stopCardioTimer();
   workoutSession.started = false;
   renderWorkout();
 }
@@ -908,13 +728,62 @@ function progressSuggestion(target, draftExercise) {
 }
 
 function workoutCompletion(draft) {
-  const sets = draft.flatMap((exercise) => exercise.sets || []);
-  const done = sets.filter((set) => set.done).length;
+  const sets = draft.flatMap((exercise) => exercise.type === "cardio" ? [exercise] : (exercise.sets || []));
+  const done = sets.filter((set) => set.done || Number(set.durationSeconds) > 0).length;
   return {
     done,
     total: sets.length,
     percent: sets.length ? Math.round((done / sets.length) * 100) : 0
   };
+}
+
+function formatDuration(seconds) {
+  const safe = Math.max(Number(seconds) || 0, 0);
+  return `${String(Math.floor(safe / 60)).padStart(2, "0")}:${String(safe % 60).padStart(2, "0")}`;
+}
+
+function stopCardioTimer() {
+  clearInterval(cardioTimer);
+  cardioTimer = null;
+  const routine = getWorkoutRoutine();
+  const draft = workoutDraft[routine?.id] || [];
+  draft.forEach((exercise) => {
+    if (exercise.type === "cardio") exercise.running = false;
+  });
+}
+
+function syncCardioTimerDisplay(exercise) {
+  const display = $("#cardioTimerDisplay");
+  if (display) display.textContent = formatDuration(exercise.durationSeconds);
+}
+
+function toggleCardioTimer(exercise) {
+  if (exercise.running) {
+    stopCardioTimer();
+    renderExerciseScreen();
+    return;
+  }
+
+  stopCardioTimer();
+  exercise.running = true;
+  syncCardioTimerDisplay(exercise);
+  cardioTimer = setInterval(() => {
+    exercise.durationSeconds = (Number(exercise.durationSeconds) || 0) + 1;
+    exercise.done = exercise.durationSeconds > 0;
+    syncCardioTimerDisplay(exercise);
+  }, 1000);
+  renderExerciseScreen();
+}
+
+function removeCurrentExercise() {
+  const routine = getWorkoutRoutine();
+  const draft = ensureWorkoutDraft(routine);
+  if (!draft.length) return;
+  if (draft[workoutSession.currentExercise]?.type === "cardio") stopCardioTimer();
+  draft.splice(workoutSession.currentExercise, 1);
+  workoutSession.currentExercise = Math.max(0, Math.min(workoutSession.currentExercise, draft.length - 1));
+  tapFeedback();
+  renderExerciseScreen();
 }
 
 function navigateExercise(delta) {
@@ -976,6 +845,11 @@ function markCurrentExerciseDone() {
   const routine = getWorkoutRoutine();
   const draft = ensureWorkoutDraft(routine);
   const exercise = draft[workoutSession.currentExercise];
+  if (exercise?.type === "cardio") {
+    exercise.done = Number(exercise.durationSeconds) > 0;
+    renderExerciseScreen();
+    return;
+  }
   exercise.sets.forEach((set) => {
     set.done = true;
   });
@@ -983,15 +857,88 @@ function markCurrentExerciseDone() {
   renderExerciseScreen();
 }
 
+function renderCardioScreen(routine, draft, exerciseIndex, completion) {
+  const exercise = draft[exerciseIndex];
+  const total = draft.length;
+
+  $("#workoutExerciseScreen").innerHTML = `
+    <article class="exercise-focus">
+      <div class="exercise-progress">
+        <span>Ejercicio ${exerciseIndex + 1} de ${total}</span>
+        <strong>${escapeHtml(routine.day || "")} - ${escapeHtml(routine.name || "")}</strong>
+      </div>
+      <div class="session-progress" aria-label="${completion.percent}% del entrenamiento completado">
+        <span style="width:${completion.percent}%"></span>
+      </div>
+      <div class="exercise-jump-strip" aria-label="Cambiar ejercicio">
+        ${draft.map((item, index) => `
+          <button class="${index === exerciseIndex ? "active" : ""}" data-exercise-jump="${index}" type="button" aria-label="Ir a ${escapeHtml(item.name)}">${index + 1}</button>
+        `).join("")}
+      </div>
+      <div class="cardio-timer-panel">
+        <span>Cardio</span>
+        <strong id="cardioTimerDisplay">${formatDuration(exercise.durationSeconds)}</strong>
+        <p>${escapeHtml(exercise.cardio || routine.cardio || "Cardio")}</p>
+        <button class="primary-action wide" id="toggleCardioTimerBtn" type="button">${exercise.running ? "Pausar tiempo" : exercise.durationSeconds ? "Reanudar tiempo" : "Iniciar tiempo"}</button>
+      </div>
+      <button class="secondary-action wide" id="removeCurrentExerciseBtn" type="button">Quitar de esta sesion</button>
+      <div class="exercise-actions">
+        <button class="secondary-action" id="prevExerciseBtn" type="button" ${exerciseIndex === 0 ? "disabled" : ""}>Anterior</button>
+        ${
+          exerciseIndex === total - 1
+            ? `<button class="primary-action" id="finishWorkoutBtn" type="button">Finalizar entrenamiento</button>`
+            : `<button class="primary-action" id="nextExerciseBtn" type="button">Siguiente</button>`
+        }
+      </div>
+    </article>
+  `;
+
+  $$("#workoutExerciseScreen [data-exercise-jump]").forEach((button) => {
+    button.addEventListener("click", () => {
+      workoutSession.currentExercise = Number(button.dataset.exerciseJump);
+      tapFeedback();
+      renderExerciseScreen();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  });
+  $("#toggleCardioTimerBtn")?.addEventListener("click", () => toggleCardioTimer(exercise));
+  $("#removeCurrentExerciseBtn")?.addEventListener("click", removeCurrentExercise);
+  $("#prevExerciseBtn")?.addEventListener("click", () => navigateExercise(-1));
+  $("#nextExerciseBtn")?.addEventListener("click", () => navigateExercise(1));
+  $("#finishWorkoutBtn")?.addEventListener("click", showFinishConfirm);
+  bindSwipeNavigation($(".exercise-focus"));
+}
+
 function renderExerciseScreen() {
   const routine = getWorkoutRoutine();
   const draft = ensureWorkoutDraft(routine);
   const total = draft.length;
+  if (!total) {
+    stopCardioTimer();
+    $("#workoutExerciseScreen").innerHTML = `
+      <article class="exercise-focus">
+        <p class="empty">Has quitado todos los ejercicios de esta sesion.</p>
+        <button class="secondary-action wide" id="backToWorkoutPickerBtn" type="button">Volver a dias</button>
+      </article>
+    `;
+    $("#backToWorkoutPickerBtn")?.addEventListener("click", leaveWorkoutFlow);
+    return;
+  }
   const completion = workoutCompletion(draft);
   workoutSession.currentExercise = Math.max(0, Math.min(workoutSession.currentExercise, total - 1));
   const exerciseIndex = workoutSession.currentExercise;
   const draftExercise = draft[exerciseIndex];
-  const target = routine.exercises[exerciseIndex] || { group: "", name: draftExercise.name, sets: draftExercise.sets.length, reps: "" };
+  if (draftExercise.type === "cardio") {
+    renderCardioScreen(routine, draft, exerciseIndex, completion);
+    return;
+  }
+  stopCardioTimer();
+  const target = {
+    group: draftExercise.group || "",
+    name: draftExercise.name,
+    sets: draftExercise.targetSets || draftExercise.sets.length,
+    reps: draftExercise.targetReps || ""
+  };
   const previousWeight = previousWeightForExercise(target.name);
   const knownAs = exerciseKnownAs(target.name, target.group);
 
@@ -1046,6 +993,7 @@ function renderExerciseScreen() {
       </div>
       <div class="progress-advice">${escapeHtml(progressSuggestion(target, draftExercise))}</div>
       <button class="secondary-action wide" id="markExerciseDoneBtn" type="button">Marcar ejercicio hecho</button>
+      <button class="secondary-action wide" id="removeCurrentExerciseBtn" type="button">Quitar de esta sesion</button>
       <div class="exercise-actions">
         <button class="secondary-action" id="prevExerciseBtn" type="button" ${exerciseIndex === 0 ? "disabled" : ""}>Anterior</button>
         ${
@@ -1084,6 +1032,7 @@ function renderExerciseScreen() {
   $("#markExerciseDoneBtn")?.addEventListener("click", () => {
     markCurrentExerciseDone();
   });
+  $("#removeCurrentExerciseBtn")?.addEventListener("click", removeCurrentExercise);
   $("#finishWorkoutBtn")?.addEventListener("click", showFinishConfirm);
   bindSwipeNavigation($(".exercise-focus"));
   loadExerciseMedia(target);
@@ -1100,8 +1049,12 @@ function syncWorkout(event) {
   }
 }
 
-function showFinishConfirm() {
+function showConfirmDialog({ title, message, confirmText, onConfirm }) {
   tapFeedback();
+  confirmAction = onConfirm;
+  $("#finishConfirmTitle").textContent = title;
+  $("#finishConfirmMessage").textContent = message;
+  $("#confirmFinishBtn").textContent = confirmText;
   $("#finishConfirm").hidden = false;
   document.body.classList.add("modal-open");
   $("#confirmFinishBtn")?.focus({ preventScroll: true });
@@ -1110,18 +1063,53 @@ function showFinishConfirm() {
 function hideFinishConfirm() {
   $("#finishConfirm").hidden = true;
   document.body.classList.remove("modal-open");
+  confirmAction = null;
+}
+
+function showStartWorkoutConfirm() {
+  const routine = getWorkoutRoutine();
+  showConfirmDialog({
+    title: "¿Deseas iniciar el entrenamiento?",
+    message: `${routine.day || ""} - ${routine.name || "Rutina"}`,
+    confirmText: "Si, iniciar",
+    onConfirm: () => {
+      hideFinishConfirm();
+      startWorkoutFlow();
+    }
+  });
+}
+
+function showFinishConfirm() {
+  showConfirmDialog({
+    title: "¿Deseas finalizar el entrenamiento?",
+    message: "Se guardaran las series que hayas marcado o rellenado.",
+    confirmText: "Si, finalizar",
+    onConfirm: finishWorkout
+  });
 }
 
 async function finishWorkout() {
   hideFinishConfirm();
+  stopCardioTimer();
   const routine = getWorkoutRoutine();
   const draft = workoutDraft[routine.id];
   if (!draft?.length) return;
 
-  const exercises = draft.map((exercise) => ({
-    name: exercise.name,
-    sets: exercise.sets.filter((set) => set.done || Number(set.reps) > 0 || Number(set.weight) > 0)
-  })).filter((exercise) => exercise.sets.length);
+  const exercises = draft.map((exercise) => {
+    if (exercise.type === "cardio") {
+      const durationSeconds = Number(exercise.durationSeconds) || 0;
+      return {
+        name: exercise.cardio ? `Cardio - ${exercise.cardio}` : "Cardio",
+        sets: durationSeconds > 0
+          ? [{ reps: Math.max(1, Math.round(durationSeconds / 60)), weight: 0, durationSeconds, done: true }]
+          : []
+      };
+    }
+    return {
+      name: exercise.name,
+      sets: exercise.sets.filter((set) => set.done || Number(set.reps) > 0 || Number(set.weight) > 0)
+    };
+  }).filter((exercise) => exercise.sets.length);
 
   if (!exercises.length) return;
 
@@ -1147,7 +1135,12 @@ function renderHistory() {
       <article class="history-item">
         <strong>${escapeHtml(session.routineName)}</strong>
         <span class="meta">${new Date(session.date).toLocaleDateString("es-ES")} - ${Math.round(session.volume).toLocaleString("es-ES")} kg</span>
-        <p class="meta">${session.exercises.map((exercise) => `${escapeHtml(exercise.name)}: ${exercise.sets.length} series`).join(" - ")}</p>
+        <p class="meta">${session.exercises.map((exercise) => {
+          const cardioSeconds = exercise.sets.find((set) => Number(set.durationSeconds) > 0)?.durationSeconds;
+          return cardioSeconds
+            ? `${escapeHtml(exercise.name)}: ${Math.round(cardioSeconds / 60)} min`
+            : `${escapeHtml(exercise.name)}: ${exercise.sets.length} series`;
+        }).join(" - ")}</p>
       </article>
     `).join("")
     : `<p class="empty">Aun no hay sesiones guardadas.</p>`;
@@ -1169,68 +1162,22 @@ function updateTimer() {
   $("#timerDisplay").textContent = `${String(Math.floor(safe / 60)).padStart(2, "0")}:${String(safe % 60).padStart(2, "0")}`;
 }
 
-function exportData() {
-  $("#exportOutput").value = JSON.stringify(state, null, 2);
-}
-
-function importData(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  if (file.size > 2000000) {
-    showError("El backup es demasiado grande.");
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = async () => {
-    try {
-      const imported = JSON.parse(reader.result);
-      await api("import", { data: imported });
-      editingRoutineId = state.selectedRoutineId;
-      renderDynamic();
-    } catch (error) {
-      showError("El backup no es valido.");
-    }
-  };
-  reader.readAsText(file);
-}
-
 function showError(message) {
-  $("#exportOutput").value = message;
-  switchView("backup");
+  console.error(message);
+  window.alert(message);
 }
 
 function bindEvents() {
   $$(".nav-item").forEach((button) => button.addEventListener("click", () => switchView(button.dataset.view)));
   $$("[data-view-link]").forEach((button) => button.addEventListener("click", () => switchView(button.dataset.viewLink)));
-  $("#routineForm").addEventListener("submit", saveRoutine);
-  $("#newRoutineBtn").addEventListener("click", createRoutine);
-  $("#addExerciseBtn").addEventListener("click", () => addExerciseRow());
-  $("#deleteRoutineBtn").addEventListener("click", deleteRoutine);
   $("#backToDaysBtn").addEventListener("click", leaveWorkoutFlow);
   $("#timerBtn").addEventListener("click", startTimer);
   $("#cancelFinishBtn").addEventListener("click", hideFinishConfirm);
-  $("#confirmFinishBtn").addEventListener("click", finishWorkout);
+  $("#confirmFinishBtn").addEventListener("click", () => {
+    if (confirmAction) confirmAction();
+  });
   $("#finishConfirm").addEventListener("click", (event) => {
     if (event.target.id === "finishConfirm") hideFinishConfirm();
-  });
-  $("#clearHistoryBtn").addEventListener("click", async () => {
-    try {
-      await api("clearHistory");
-      renderDynamic();
-    } catch (error) {
-      showError(error.message);
-    }
-  });
-  $("#exportBtn").addEventListener("click", exportData);
-  $("#importInput").addEventListener("change", importData);
-  $("#resetBtn").addEventListener("click", async () => {
-    try {
-      await api("reset");
-      editingRoutineId = state.selectedRoutineId;
-      renderDynamic();
-    } catch (error) {
-      showError(error.message);
-    }
   });
 }
 

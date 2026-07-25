@@ -28,10 +28,8 @@
 
       <nav class="nav" aria-label="Navegacion principal">
           <button class="nav-item" data-view="dashboard" type="button">Inicio</button>
-          <button class="nav-item" data-view="routines" type="button">Rutinas</button>
           <button class="nav-item active" data-view="workout" type="button">Entrenar</button>
         <button class="nav-item" data-view="history" type="button">Historial</button>
-        <button class="nav-item" data-view="backup" type="button">Datos</button>
       </nav>
 
       <main class="main">
@@ -110,46 +108,6 @@
           </section>
         </section>
 
-        <section class="view" id="routinesView">
-          <div class="split-layout">
-            <section class="panel">
-              <div class="panel-heading">
-                <h2>Rutinas</h2>
-                <button class="primary-action compact" id="newRoutineBtn" type="button">Nueva</button>
-              </div>
-              <div class="routine-list" id="routineList"></div>
-            </section>
-
-            <section class="panel">
-              <div class="panel-heading">
-                <h2 id="routineEditorTitle">Editor</h2>
-              </div>
-              <form class="editor-form" id="routineForm">
-                <input type="hidden" id="routineId">
-                <label>Dia<input id="routineDay" maxlength="24" required></label>
-                <label>Nombre<input id="routineName" maxlength="42" required></label>
-                <label>Objetivo<input id="routineGoal" maxlength="80" placeholder="Fuerza, volumen, torso..."></label>
-                <label>Cardio<input id="routineCardio" maxlength="100" placeholder="30 min cinta, caminar..."></label>
-                <div class="form-row">
-                  <label>Color<input id="routineColor" type="color" value="#e0b15b"></label>
-                  <label>Descanso segundos<input id="routineRest" type="number" min="15" max="300" step="15" value="90"></label>
-                </div>
-                <div class="exercise-editor">
-                  <div class="panel-heading">
-                    <h3>Ejercicios</h3>
-                    <button class="secondary-action compact" id="addExerciseBtn" type="button">Anadir</button>
-                  </div>
-                  <div id="exerciseEditorList"></div>
-                </div>
-                <div class="form-actions">
-                  <button class="secondary-action" id="deleteRoutineBtn" type="button">Eliminar</button>
-                  <button class="primary-action" type="submit">Guardar rutina</button>
-                </div>
-              </form>
-            </section>
-          </div>
-        </section>
-
         <section class="view active" id="workoutView">
           <div class="mobile-workout-shell">
             <section class="workout-picker panel" id="workoutPicker">
@@ -175,42 +133,18 @@
           <div class="panel">
             <div class="panel-heading">
               <h2>Historial</h2>
-              <button class="secondary-action compact" id="clearHistoryBtn" type="button">Limpiar</button>
             </div>
             <div class="history-list" id="historyList"></div>
           </div>
         </section>
 
-        <section class="view" id="backupView">
-          <div class="panel">
-            <div class="panel-heading">
-              <h2>Datos</h2>
-            </div>
-            <div class="settings-grid">
-              <button class="secondary-action" id="exportBtn" type="button">Exportar JSON</button>
-              <label class="import-button">Importar JSON<input id="importInput" type="file" accept="application/json"></label>
-              <button class="danger-action" id="resetBtn" type="button">Resetear app</button>
-            </div>
-            <textarea id="exportOutput" readonly placeholder="Aqui aparecera tu copia de seguridad."></textarea>
-          </div>
-        </section>
       </main>
     </div>
-
-    <template id="exerciseTemplate">
-      <article class="exercise-row">
-        <label>Grupo<input class="exercise-group" maxlength="24" placeholder="Pecho" readonly></label>
-        <label>Ejercicio<select class="exercise-name" required></select></label>
-        <label>Series<input class="exercise-sets" type="number" min="1" max="12" value="4" required></label>
-        <label>Reps<input class="exercise-reps" maxlength="12" value="8-10" required></label>
-        <button class="icon-button remove-exercise" type="button" aria-label="Eliminar ejercicio">x</button>
-      </article>
-    </template>
 
     <div class="confirm-modal" id="finishConfirm" hidden>
       <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="finishConfirmTitle">
         <h2 id="finishConfirmTitle">¿Deseas finalizar el entrenamiento?</h2>
-        <p>Se guardaran las series que hayas marcado o rellenado.</p>
+        <p id="finishConfirmMessage">Se guardaran las series que hayas marcado o rellenado.</p>
         <div class="confirm-actions">
           <button class="secondary-action" id="cancelFinishBtn" type="button">No</button>
           <button class="primary-action" id="confirmFinishBtn" type="button">Si, finalizar</button>
