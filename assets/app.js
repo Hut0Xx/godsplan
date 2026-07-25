@@ -553,7 +553,6 @@ function renderDashboard() {
 
 function renderWorkout() {
   renderWorkoutDays();
-  renderQuickStartWorkout();
   if (workoutSession.started) {
     $("#workoutPicker").hidden = true;
     $("#workoutSession").hidden = false;
@@ -565,25 +564,12 @@ function renderWorkout() {
   $("#workoutSession").hidden = true;
 }
 
-function renderQuickStartWorkout() {
-  const routine = getWorkoutRoutine();
-  const itemCount = (routine?.exercises?.length || 0) + (routine?.cardio ? 1 : 0);
-  const targetLabel = itemCount ? `${itemCount} ejercicios` : "Descanso activo";
-  $("#quickStartWorkout").innerHTML = `
-    <article class="quick-start-card" style="border-color:${escapeHtml(routine?.color || "#e0b15b")}">
-      <span class="eyebrow">Entreno seleccionado</span>
-      <h2>${escapeHtml(routine?.day || "")} - ${escapeHtml(routine?.name || "Rutina")}</h2>
-      <p>${escapeHtml(targetLabel)}${routine?.cardio ? ` - ${escapeHtml(routine.cardio)}` : ""}. Toca otra vez este dia para iniciar.</p>
-    </article>
-  `;
-}
-
 function renderWorkoutDays() {
   $("#workoutDaySelector").innerHTML = state.routines.map((routine) => `
     <button class="day-card ${routine.id === workoutSession.routineId ? "active" : ""}" data-id="${escapeHtml(routine.id)}" type="button" style="border-color:${escapeHtml(routine.color)}">
-      <span>${escapeHtml(routine.day || "")}</span>
+      <span>${escapeHtml(routine.day || "")}${routine.id === workoutSession.routineId ? `<em>Seleccionado</em>` : ""}</span>
       <strong>${escapeHtml(routine.name || "")}</strong>
-      <small>${(routine.exercises.length || routine.cardio) ? `${routine.exercises.length + (routine.cardio ? 1 : 0)} ejercicios` : "Descanso activo"} - ${escapeHtml(routine.cardio || routine.goal || "")}</small>
+      <small>${(routine.exercises.length || routine.cardio) ? `${routine.exercises.length + (routine.cardio ? 1 : 0)} ejercicios` : "Descanso activo"} - ${escapeHtml(routine.cardio || routine.goal || "")}${routine.id === workoutSession.routineId ? ". Toca otra vez para iniciar." : ""}</small>
     </button>
   `).join("");
 
@@ -775,17 +761,6 @@ function toggleCardioTimer(exercise) {
   renderExerciseScreen();
 }
 
-function removeCurrentExercise() {
-  const routine = getWorkoutRoutine();
-  const draft = ensureWorkoutDraft(routine);
-  if (!draft.length) return;
-  if (draft[workoutSession.currentExercise]?.type === "cardio") stopCardioTimer();
-  draft.splice(workoutSession.currentExercise, 1);
-  workoutSession.currentExercise = Math.max(0, Math.min(workoutSession.currentExercise, draft.length - 1));
-  tapFeedback();
-  renderExerciseScreen();
-}
-
 function navigateExercise(delta) {
   const routine = getWorkoutRoutine();
   const draft = ensureWorkoutDraft(routine);
@@ -881,7 +856,6 @@ function renderCardioScreen(routine, draft, exerciseIndex, completion) {
         <p>${escapeHtml(exercise.cardio || routine.cardio || "Cardio")}</p>
         <button class="primary-action wide" id="toggleCardioTimerBtn" type="button">${exercise.running ? "Pausar tiempo" : exercise.durationSeconds ? "Reanudar tiempo" : "Iniciar tiempo"}</button>
       </div>
-      <button class="secondary-action wide" id="removeCurrentExerciseBtn" type="button">Quitar de esta sesion</button>
       <div class="exercise-actions">
         <button class="secondary-action" id="prevExerciseBtn" type="button" ${exerciseIndex === 0 ? "disabled" : ""}>Anterior</button>
         ${
@@ -902,7 +876,6 @@ function renderCardioScreen(routine, draft, exerciseIndex, completion) {
     });
   });
   $("#toggleCardioTimerBtn")?.addEventListener("click", () => toggleCardioTimer(exercise));
-  $("#removeCurrentExerciseBtn")?.addEventListener("click", removeCurrentExercise);
   $("#prevExerciseBtn")?.addEventListener("click", () => navigateExercise(-1));
   $("#nextExerciseBtn")?.addEventListener("click", () => navigateExercise(1));
   $("#finishWorkoutBtn")?.addEventListener("click", showFinishConfirm);
@@ -913,17 +886,7 @@ function renderExerciseScreen() {
   const routine = getWorkoutRoutine();
   const draft = ensureWorkoutDraft(routine);
   const total = draft.length;
-  if (!total) {
-    stopCardioTimer();
-    $("#workoutExerciseScreen").innerHTML = `
-      <article class="exercise-focus">
-        <p class="empty">Has quitado todos los ejercicios de esta sesion.</p>
-        <button class="secondary-action wide" id="backToWorkoutPickerBtn" type="button">Volver a dias</button>
-      </article>
-    `;
-    $("#backToWorkoutPickerBtn")?.addEventListener("click", leaveWorkoutFlow);
-    return;
-  }
+  if (!total) return;
   const completion = workoutCompletion(draft);
   workoutSession.currentExercise = Math.max(0, Math.min(workoutSession.currentExercise, total - 1));
   const exerciseIndex = workoutSession.currentExercise;
@@ -993,7 +956,6 @@ function renderExerciseScreen() {
       </div>
       <div class="progress-advice">${escapeHtml(progressSuggestion(target, draftExercise))}</div>
       <button class="secondary-action wide" id="markExerciseDoneBtn" type="button">Marcar ejercicio hecho</button>
-      <button class="secondary-action wide" id="removeCurrentExerciseBtn" type="button">Quitar de esta sesion</button>
       <div class="exercise-actions">
         <button class="secondary-action" id="prevExerciseBtn" type="button" ${exerciseIndex === 0 ? "disabled" : ""}>Anterior</button>
         ${
@@ -1032,7 +994,6 @@ function renderExerciseScreen() {
   $("#markExerciseDoneBtn")?.addEventListener("click", () => {
     markCurrentExerciseDone();
   });
-  $("#removeCurrentExerciseBtn")?.addEventListener("click", removeCurrentExercise);
   $("#finishWorkoutBtn")?.addEventListener("click", showFinishConfirm);
   bindSwipeNavigation($(".exercise-focus"));
   loadExerciseMedia(target);
@@ -1168,6 +1129,13 @@ function showError(message) {
 }
 
 function bindEvents() {
+  document.addEventListener("gesturestart", (event) => event.preventDefault());
+  let lastTouchEnd = 0;
+  document.addEventListener("touchend", (event) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) event.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false });
   $$(".nav-item").forEach((button) => button.addEventListener("click", () => switchView(button.dataset.view)));
   $$("[data-view-link]").forEach((button) => button.addEventListener("click", () => switchView(button.dataset.viewLink)));
   $("#backToDaysBtn").addEventListener("click", leaveWorkoutFlow);
