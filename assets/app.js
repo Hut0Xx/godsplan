@@ -1,6 +1,6 @@
-let state = loadLocalState();
+let state;
 let workoutDraft = {};
-let workoutSession = { started: false, routineId: state.selectedRoutineId || state.routines[0]?.id, currentExercise: 0 };
+let workoutSession;
 let timer = null;
 let timerRemaining = 0;
 let cardioTimer = null;
@@ -21,58 +21,222 @@ let exerciseGifIndexPromise = null;
 const exerciseMediaOverrides = {
   "press inclinado con mancuernas": "pectorals/dumbbell-incline-bench-press",
   "press inclinado": "pectorals/dumbbell-incline-bench-press",
+  "press de pecho en maquina": "pectorals/lever-chest-press",
   "press convergente en maquina": "pectorals/lever-incline-chest-press-v-2",
   "press maquina": "pectorals/lever-chest-press",
   "pec deck": "pectorals/lever-seated-fly",
+  "jalon en polea barra recta/v": "triceps/cable-pushdown",
   "extension con barra recta/v": "triceps/cable-pushdown",
   "extension por encima de la cabeza con cuerda": "triceps/cable-overhead-triceps-extension-rope-attachment",
   "jalon al pecho": "lats/cable-bar-lateral-pulldown",
   "jalon": "lats/cable-bar-lateral-pulldown",
   "remo sentado": "upper-back/cable-low-seated-row",
+  "remo sentado agarre diferente": "upper-back/cable-low-seated-row",
   "remo unilateral en polea": "upper-back/cable-seated-one-arm-alternate-row",
+  "curl predicador": "biceps/barbell-preacher-curl",
   "predicador": "biceps/barbell-preacher-curl",
+  "curl martillo": "biceps/dumbbell-alternate-seated-hammer-curl",
   "martillo": "biceps/dumbbell-alternate-seated-hammer-curl",
+  "curl bayesiano": "biceps/cable-one-arm-curl",
   "bayesian curl": "biceps/cable-one-arm-curl",
   "curl inclinado": "biceps/dumbbell-incline-curl",
   "curl polea baja": "biceps/cable-curl",
-  "press militar maquina": "delts/lever-shoulder-press",
+  "curl en polea baja": "biceps/cable-curl",
+  "press militar maquina": "delts/lever-military-press",
+  "press militar en maquina": "delts/lever-military-press",
+  "elevaciones laterales con mancuernas": "delts/dumbbell-lateral-raise",
   "elevaciones laterales polea": "delts/cable-one-arm-lateral-raise",
   "elevaciones laterales maquina": "delts/lever-lateral-raise",
   "elevaciones laterales": "delts/dumbbell-lateral-raise",
-  "pec deck inverso": "delts/cable-seated-rear-lateral-raise",
+  "pec deck inverso": "delts/lever-seated-reverse-fly",
   "face pull": "delts/cable-standing-rear-delt-row-with-rope",
+  "jalon con cuerda": "triceps/cable-pushdown-with-rope-attachment",
   "jalon cuerda": "triceps/cable-pushdown-with-rope-attachment",
+  "extension unilateral en polea": "triceps/cable-standing-one-arm-triceps-extension",
   "extension unilateral": "triceps/cable-standing-one-arm-triceps-extension",
   "extension cuerda": "triceps/cable-pushdown-with-rope-attachment",
   "prensa": "glutes/sled-45-leg-press",
   "hack squat": "glutes/sled-hack-squat",
   "extension de cuadriceps": "quads/lever-leg-extension",
+  "curl femoral sentado": "hamstrings/lever-seated-leg-curl",
   "femoral sentado": "hamstrings/lever-seated-leg-curl",
+  "curl femoral tumbado": "hamstrings/lever-lying-leg-curl",
   "femoral tumbado": "hamstrings/lever-lying-leg-curl",
+  "elevacion de gemelos": "calves/sled-calf-press-on-leg-press",
   "gemelos": "calves/sled-calf-press-on-leg-press",
+  "crunch en maquina": "abs/lever-seated-crunch",
   "crunch maquina": "abs/lever-seated-crunch",
   "crunch polea": "abs/cable-kneeling-crunch"
 };
+
+const definitiveNotes = {
+  rest: [
+    "Ejercicios compuestos: 2-3 minutos.",
+    "Ejercicios de aislamiento: 60-90 segundos."
+  ],
+  rir: [
+    "Primera serie: RIR 2.",
+    "Segunda serie: RIR 1.",
+    "Ultima serie: RIR 0-1.",
+    "En prensa, hack, press y remo no hace falta llegar al fallo absoluto.",
+    "Reserva el fallo para la ultima serie de algunos aislamientos, siempre con buena tecnica."
+  ],
+  progression: [
+    "6-8 reps: cuando completes todas las series con 8 reps, aumenta el peso.",
+    "8-10 reps: cuando completes todas las series con 10 reps, aumenta el peso.",
+    "10-15 reps: cuando completes todas las series con 15 reps, aumenta el peso."
+  ],
+  habits: [
+    "Cardio despues de las pesas segun lo programado.",
+    "Pasos diarios: 8.000-10.000.",
+    "Proteina ajustada a tu peso.",
+    "Buena hidratacion.",
+    "Dormir 7,5-9 horas."
+  ]
+};
+
+const definitiveRoutines = [
+  {
+    id: "monday",
+    day: "Lunes",
+    name: "Pecho + Triceps",
+    goal: "Pecho, triceps y cardio en cinta",
+    color: "#e0b15b",
+    rest: 120,
+    cardio: "30 min cinta - 5-5,5 km/h - 8-10% inclinacion",
+    exercises: [
+      { id: "mon-1", group: "Pecho", name: "Press inclinado con mancuernas", sets: 4, reps: "6-8" },
+      { id: "mon-2", group: "Pecho", name: "Press de pecho en maquina", sets: 3, reps: "8-10" },
+      { id: "mon-3", group: "Pecho", name: "Pec Deck", sets: 3, reps: "12-15" },
+      { id: "mon-4", group: "Triceps", name: "Jalon en polea barra recta/V", sets: 3, reps: "8-10" },
+      { id: "mon-5", group: "Triceps", name: "Extension por encima de la cabeza con cuerda", sets: 3, reps: "10-12" }
+    ]
+  },
+  {
+    id: "tuesday",
+    day: "Martes",
+    name: "Espalda + Biceps",
+    goal: "Jalones, remos y curls",
+    color: "#71c7a8",
+    rest: 120,
+    cardio: "30 min cardio",
+    exercises: [
+      { id: "tue-1", group: "Espalda", name: "Jalon al pecho", sets: 4, reps: "8-10" },
+      { id: "tue-2", group: "Espalda", name: "Remo sentado", sets: 4, reps: "8-10" },
+      { id: "tue-3", group: "Espalda", name: "Remo sentado agarre diferente", sets: 3, reps: "10-12" },
+      { id: "tue-4", group: "Biceps", name: "Curl predicador", sets: 3, reps: "8-10" },
+      { id: "tue-5", group: "Biceps", name: "Curl martillo", sets: 3, reps: "10-12" },
+      { id: "tue-6", group: "Biceps", name: "Curl bayesiano", sets: 2, reps: "12-15" }
+    ]
+  },
+  {
+    id: "wednesday",
+    day: "Miercoles",
+    name: "Descanso activo",
+    goal: "Caminar 45-60 minutos",
+    color: "#7fa7dc",
+    rest: 60,
+    cardio: "Caminar 45-60 min",
+    exercises: []
+  },
+  {
+    id: "thursday",
+    day: "Jueves",
+    name: "Pierna + Abdomen",
+    goal: "Cuadriceps, femoral, gemelos y abdomen",
+    color: "#d97665",
+    rest: 150,
+    cardio: "20-25 min cardio",
+    exercises: [
+      { id: "thu-1", group: "Cuadriceps", name: "Prensa", sets: 4, reps: "8-10" },
+      { id: "thu-2", group: "Cuadriceps", name: "Hack Squat", sets: 4, reps: "8-10" },
+      { id: "thu-3", group: "Cuadriceps", name: "Extension de cuadriceps", sets: 3, reps: "12-15" },
+      { id: "thu-4", group: "Femoral", name: "Curl femoral sentado", sets: 3, reps: "10-12" },
+      { id: "thu-5", group: "Femoral", name: "Curl femoral tumbado", sets: 3, reps: "10-12" },
+      { id: "thu-6", group: "Gemelos", name: "Elevacion de gemelos", sets: 4, reps: "12-20" },
+      { id: "thu-7", group: "Abdomen", name: "Crunch en maquina", sets: 4, reps: "12-15" }
+    ]
+  },
+  {
+    id: "friday",
+    day: "Viernes",
+    name: "Hombros + Brazos",
+    goal: "Hombros, biceps, triceps y cardio",
+    color: "#b98be0",
+    rest: 90,
+    cardio: "30 min cardio",
+    exercises: [
+      { id: "fri-1", group: "Hombros", name: "Press militar en maquina", sets: 3, reps: "6-8" },
+      { id: "fri-2", group: "Hombros", name: "Elevaciones laterales con mancuernas", sets: 5, reps: "12-20" },
+      { id: "fri-3", group: "Hombros", name: "Pec Deck inverso", sets: 4, reps: "12-15" },
+      { id: "fri-4", group: "Biceps", name: "Curl inclinado", sets: 3, reps: "10-12" },
+      { id: "fri-5", group: "Biceps", name: "Curl en polea baja", sets: 3, reps: "12-15" },
+      { id: "fri-6", group: "Triceps", name: "Jalon con cuerda", sets: 3, reps: "12-15" },
+      { id: "fri-7", group: "Triceps", name: "Extension unilateral en polea", sets: 3, reps: "12-15" }
+    ]
+  },
+  {
+    id: "saturday",
+    day: "Sabado",
+    name: "Torso",
+    goal: "Pecho, espalda, hombros, brazos y cardio",
+    color: "#f08a74",
+    rest: 120,
+    cardio: "35 min cardio",
+    exercises: [
+      { id: "sat-1", group: "Pecho", name: "Press inclinado con mancuernas", sets: 3, reps: "6-8" },
+      { id: "sat-2", group: "Pecho", name: "Press de pecho en maquina", sets: 3, reps: "8-10" },
+      { id: "sat-3", group: "Espalda", name: "Jalon al pecho", sets: 3, reps: "8-10" },
+      { id: "sat-4", group: "Espalda", name: "Remo sentado", sets: 3, reps: "8-10" },
+      { id: "sat-5", group: "Hombros", name: "Elevaciones laterales", sets: 3, reps: "15-20" },
+      { id: "sat-6", group: "Brazos", name: "Curl predicador", sets: 2, reps: "12-15" },
+      { id: "sat-7", group: "Brazos", name: "Jalon con cuerda", sets: 2, reps: "12-15" }
+    ]
+  },
+  {
+    id: "sunday",
+    day: "Domingo",
+    name: "Descanso activo",
+    goal: "Caminar 45-60 minutos",
+    color: "#7fa7dc",
+    rest: 60,
+    cardio: "Caminar 45-60 min",
+    exercises: []
+  }
+];
 
 function uid(prefix) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
+function planState(base = {}) {
+  const todayIds = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const todayId = todayIds[new Date().getDay()];
+  const selectedRoutineId = definitiveRoutines.some((routine) => routine.id === base.selectedRoutineId)
+    ? base.selectedRoutineId
+    : todayId;
+  return {
+    ...base,
+    selectedRoutineId,
+    notes: structuredClone(definitiveNotes),
+    routines: structuredClone(definitiveRoutines),
+    sessions: Array.isArray(base.sessions) ? base.sessions : []
+  };
+}
+
 function loadLocalState() {
   try {
     const saved = JSON.parse(localStorage.getItem("godsplanGymData") || "null");
-    if (saved && Array.isArray(saved.routines) && Array.isArray(saved.sessions)) return saved;
+    if (saved && Array.isArray(saved.sessions)) return planState(saved);
   } catch (error) {
     console.warn("No se pudieron cargar los datos locales.", error);
   }
-  const initialState = structuredClone(window.GODSPLAN_DATA);
-  const todayIds = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-  const todayId = todayIds[new Date().getDay()];
-  if (initialState.routines?.some((routine) => routine.id === todayId)) {
-    initialState.selectedRoutineId = todayId;
-  }
-  return initialState;
+  return planState(window.GODSPLAN_DATA);
 }
+
+state = loadLocalState();
+workoutSession = { started: false, routineId: state.selectedRoutineId || state.routines[0]?.id, currentExercise: 0 };
+persistLocalState();
 
 function persistLocalState() {
   localStorage.setItem(storageKey, JSON.stringify(state));
@@ -135,6 +299,7 @@ function movementType(name, group = "") {
   if (text.includes("gemelo")) return "calf";
   if (text.includes("crunch") || text.includes("abdomen")) return "core";
   if (text.includes("remo")) return "row";
+  if (text.includes("jalon con cuerda") || text.includes("jalon en polea") || text.includes("triceps")) return "triceps";
   if (text.includes("jalon") || text.includes("dominada") || text.includes("pullover")) return "pulldown";
   if (text.includes("curl") || text.includes("predicador") || text.includes("martillo") || text.includes("barra z")) return "curl";
   if (text.includes("triceps") || text.includes("extension") || text.includes("cuerda")) return "triceps";
@@ -234,28 +399,39 @@ function mediaSearchTerms(name, group = "") {
   const aliases = [
     ["press inclinado mancuernas", "incline dumbbell press"],
     ["press inclinado", "incline bench press"],
+    ["press pecho maquina", "machine chest press"],
     ["press convergente maquina", "machine chest press"],
     ["press maquina", "machine chest press"],
-    ["pec deck inverso", "reverse pec deck"],
+    ["pec deck inverso", "lever seated reverse fly"],
     ["pec deck", "pec deck"],
     ["aperturas polea", "cable fly"],
     ["jalon al pecho", "lat pulldown"],
     ["jalon", "lat pulldown"],
+    ["remo sentado agarre diferente", "seated cable row"],
     ["remo sentado", "seated cable row"],
     ["remo unilateral polea", "one arm cable row"],
     ["remo mancuerna", "dumbbell row"],
     ["pullover polea", "cable pullover"],
     ["predicador", "preacher curl"],
+    ["curl predicador", "preacher curl"],
     ["martillo", "hammer curl"],
+    ["curl martillo", "hammer curl"],
     ["bayesian curl", "bayesian curl"],
+    ["curl bayesiano", "bayesian curl"],
     ["curl inclinado", "incline dumbbell curl"],
     ["curl polea baja", "cable curl"],
+    ["curl en polea baja", "cable curl"],
     ["curl barra z", "ez bar curl"],
     ["extension por encima cabeza cuerda", "overhead cable triceps extension"],
     ["extension barra recta", "cable triceps pushdown"],
+    ["jalon en polea barra recta", "cable triceps pushdown"],
+    ["jalon con cuerda", "rope triceps pushdown"],
     ["jalon cuerda", "rope triceps pushdown"],
     ["extension unilateral", "one arm cable triceps extension"],
-    ["press militar maquina", "machine shoulder press"],
+    ["extension unilateral polea", "one arm cable triceps extension"],
+    ["press militar maquina", "lever military press"],
+    ["press militar en maquina", "lever military press"],
+    ["elevaciones laterales con mancuernas", "dumbbell lateral raise"],
     ["elevaciones laterales polea", "cable lateral raise"],
     ["elevaciones laterales maquina", "machine lateral raise"],
     ["elevaciones laterales", "lateral raise"],
@@ -263,12 +439,16 @@ function mediaSearchTerms(name, group = "") {
     ["prensa", "leg press"],
     ["hack squat", "hack squat"],
     ["extension cuadriceps", "leg extension"],
+    ["curl femoral sentado", "seated leg curl"],
     ["femoral sentado", "seated leg curl"],
+    ["curl femoral tumbado", "lying leg curl"],
     ["femoral tumbado", "lying leg curl"],
+    ["elevacion gemelos", "calf raise"],
     ["gemelos", "calf raise"],
     ["sentadilla multipower", "smith machine squat"],
     ["peso muerto rumano", "romanian deadlift"],
     ["crunch maquina", "machine crunch"],
+    ["crunch en maquina", "machine crunch"],
     ["crunch polea", "cable crunch"]
   ];
   const matched = aliases.find(([needle]) => text.includes(needle));
@@ -280,33 +460,48 @@ function exerciseKnownAs(name, group = "") {
   const names = [
     ["press inclinado mancuernas", "banco inclinado con mancuernas"],
     ["press inclinado", "press de pecho en banco inclinado"],
+    ["press pecho maquina", "maquina de press de pecho"],
     ["press convergente maquina", "maquina de press de pecho sentado"],
     ["press maquina", "maquina de press de pecho"],
     ["pec deck inverso", "maquina de aperturas inversas para hombro posterior"],
     ["pec deck", "maquina de aperturas de pecho"],
     ["jalon al pecho", "polea al pecho"],
     ["jalon", "polea al pecho"],
+    ["remo sentado agarre diferente", "remo en polea sentado con otro agarre"],
     ["remo sentado", "remo en polea sentado"],
     ["remo unilateral polea", "remo a una mano en polea"],
     ["predicador", "curl en banco predicador"],
+    ["curl predicador", "curl en banco predicador"],
     ["martillo", "curl martillo con mancuernas"],
+    ["curl martillo", "curl martillo con mancuernas"],
     ["bayesian curl", "curl en polea desde atras"],
+    ["curl bayesiano", "curl en polea desde atras"],
     ["curl inclinado", "curl con mancuernas en banco inclinado"],
     ["curl polea baja", "curl de biceps en polea baja"],
+    ["curl en polea baja", "curl de biceps en polea baja"],
     ["extension por encima cabeza cuerda", "extension de triceps por encima de la cabeza en polea"],
     ["extension barra recta", "pushdown de triceps en polea"],
+    ["jalon en polea barra recta", "pushdown de triceps en polea"],
+    ["jalon con cuerda", "triceps con cuerda en polea"],
     ["jalon cuerda", "triceps con cuerda en polea"],
     ["extension unilateral", "extension de triceps a una mano en polea"],
+    ["extension unilateral polea", "extension de triceps a una mano en polea"],
     ["press militar maquina", "maquina de press de hombro"],
+    ["press militar en maquina", "maquina de press de hombro"],
+    ["elevaciones laterales con mancuernas", "elevacion lateral con mancuernas"],
     ["elevaciones laterales polea", "elevacion lateral con polea"],
     ["elevaciones laterales maquina", "maquina de elevaciones laterales"],
     ["face pull", "tiron a la cara con cuerda en polea"],
     ["prensa", "prensa de piernas"],
     ["hack squat", "sentadilla en maquina hack"],
     ["extension cuadriceps", "maquina de extension de piernas"],
+    ["curl femoral sentado", "maquina de curl femoral sentado"],
     ["femoral sentado", "maquina de curl femoral sentado"],
+    ["curl femoral tumbado", "maquina de curl femoral tumbado"],
     ["femoral tumbado", "maquina de curl femoral tumbado"],
+    ["elevacion gemelos", "elevacion de gemelos"],
     ["gemelos", "elevacion de gemelos"],
+    ["crunch en maquina", "maquina de abdominales"],
     ["crunch maquina", "maquina de abdominales"],
     ["crunch polea", "abdominal en polea alta"]
   ];
@@ -1072,7 +1267,12 @@ async function finishWorkout() {
     };
   }).filter((exercise) => exercise.sets.length);
 
-  if (!exercises.length) return;
+  if (!exercises.length) {
+    workoutDraft[routine.id] = null;
+    workoutSession.started = false;
+    renderWorkout();
+    return;
+  }
 
   try {
     await api("saveSession", {
